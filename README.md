@@ -9,9 +9,9 @@ swagger-springboot-maven-plugin 可以根据 Java docs规范 以及springmvc 注
 需要安装环境 [Maven](https://maven.apache.org/)
 and [Java8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) .
 
-## installation
+## plugin
 
-```shell
+```xml
 <plugin>
     <groupId>com.github.wu191287278</groupId>
     <artifactId>swagger-springboot-maven-plugin</artifactId>
@@ -23,8 +23,33 @@ and [Java8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downlo
         <version>1.0</version>
         <description>这是一个测试项目</description>
         <outputDirectory>${project.build.outputDirectory}/classes/static</outputDirectory>
+        <combineProject>api</combineProject>
     </configuration>
 </plugin>
+```
+
+## 示例
+```
+/**
+ * 搜索接口
+ */
+@RestController
+@RequestMapping(value="/search")
+public class SearchController {
+
+    /**
+     * 搜索用户
+     *
+     * @param nickname 用户昵称
+     * @throws 未找到用户
+     * @return 用户列表
+     */
+    @GetMapping(value = "user")
+    public String user(@RequestParam(value = "nickname") String nickname) throws NotFoundException{
+        return "user:"+nickname;
+    }
+
+}
 ```
 
 ## 生成文档
@@ -51,3 +76,4 @@ http://你的地址/swagger-ui.html
 |version|对应swagger version|默认 1.0.0|
 |description|对应swagger description|默认 无|
 |outputDirectory|输出目录|默认classes/static文件夹|
+|combineProject|合并多个项目swagger|项目名称逗号分割|
