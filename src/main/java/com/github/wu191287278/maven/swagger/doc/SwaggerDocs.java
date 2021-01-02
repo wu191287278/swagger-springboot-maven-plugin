@@ -25,7 +25,6 @@ import com.github.wu191287278.maven.swagger.doc.visitor.RestVisitorAdapter;
 import io.swagger.models.*;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.In;
-import io.swagger.parser.SwaggerParser;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,32 +106,7 @@ public class SwaggerDocs {
         if (!file.getParentFile().exists()) {
             file.getParentFile().mkdirs();
         }
-        if (file.exists()) {
-            try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
-                SwaggerParser swaggerParser = new SwaggerParser();
-                Swagger old = swaggerParser.parse(IOUtils.toString(in, StandardCharsets.UTF_8));
-                if (old.getInfo() != null) {
-                    swagger.setInfo(old.getInfo());
-                }
-                if (old.getBasePath() != null) {
-                    swagger.setBasePath(old.getBasePath());
-                }
-                if (old.getHost() != null) {
-                    swagger.setHost(old.getHost());
-                }
-                if (old.getSchemes() != null) {
-                    swagger.setSchemes(old.getSchemes());
-                }
-                if (old.getSecurity() != null) {
-                    swagger.setSecurity(old.getSecurity());
-                }
-                if (old.getSecurityDefinitions() != null) {
-                    swagger.setSecurityDefinitions(old.getSecurityDefinitions());
-                }
 
-            } catch (Exception ignore) {
-            }
-        }
         try (BufferedWriter out = new BufferedWriter(new FileWriter(file))) {
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(swagger);
             out.write(json);
