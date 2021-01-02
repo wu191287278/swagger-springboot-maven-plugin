@@ -22,7 +22,7 @@ and [Java8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downlo
         <title>测试</title>
         <version>1.0</version>
         <description>这是一个测试项目</description>
-        <outputDirectory>${project.build.outputDirectory}/classes/static</outputDirectory>
+        <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
         <combineProject>api</combineProject>
     </configuration>
 </plugin>
