@@ -5,10 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import io.swagger.models.Model;
 import io.swagger.models.Path;
 import io.swagger.models.Swagger;
+import io.swagger.models.Tag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -27,7 +25,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 
-@Mojo(name = "generate", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name = "generate", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 @Execute(phase = LifecyclePhase.COMPILE)
 public class SwaggerMojo extends AbstractMojo {
 
@@ -119,18 +117,25 @@ public class SwaggerMojo extends AbstractMojo {
                 String[] combineProjects = combineProject.split(",");
                 Map<String, Path> pathMap = new TreeMap<>();
                 Map<String, Model> definitionsMap = new TreeMap<>();
+                Map<String, Tag> tags = new TreeMap<>();
                 for (String combine : combineProjects) {
                     Swagger combineSwagger = m.get(combine.trim());
                     if (combineSwagger == null) continue;
                     pathMap.putAll(combineSwagger.getPaths());
                     definitionsMap.putAll(combineSwagger.getDefinitions());
-                    swagger.getTags().addAll(combineSwagger.getTags());
+                    for (Tag tag : combineSwagger.getTags()) {
+                        tags.put(tag.getName(), tag);
+                    }
                     getLog().info("Combine " + combine + " swagger");
                 }
                 pathMap.putAll(swagger.getPaths());
                 definitionsMap.putAll(swagger.getDefinitions());
+                for (Tag tag : swagger.getTags()) {
+                    tags.put(tag.getName(), tag);
+                }
                 swagger.setPaths(pathMap);
                 swagger.setDefinitions(definitionsMap);
+                swagger.setTags(new ArrayList<>(tags.values()));
             }
             write(swagger, new File(outputDirectory, "swagger.json"));
             urls.add(ImmutableMap.of("name", project.getArtifactId(), "url", "./swagger.json"));
@@ -147,12 +152,14 @@ public class SwaggerMojo extends AbstractMojo {
 
     private void writeHtml(List<Map<String, String>> urls) {
         String html = "";
+        File file = new File(outputDirectory, "swagger-ui.html");
         try (InputStream in = SwaggerMojo.class.getClassLoader().getResourceAsStream("META-INF/resources/swagger/swagger-ui.html");
-             FileWriter writer = new FileWriter(new File(outputDirectory, "swagger-ui.html"))) {
+             FileWriter writer = new FileWriter(file)) {
             if (in != null) {
                 html = IOUtils.toString(in, StandardCharsets.UTF_8);
                 html = String.format(html, "urls: " + new ObjectMapper().writeValueAsString(urls));
                 writer.write(html);
+                getLog().info("Html output path: " + file.getAbsolutePath());
             }
         } catch (IOException e) {
             getLog().error(e);
@@ -165,6 +172,7 @@ public class SwaggerMojo extends AbstractMojo {
         try (FileWriter writer = new FileWriter(out)) {
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(swagger);
             writer.write(json);
+            getLog().info("Swagger output path: " + out.getAbsolutePath());
         } catch (IOException e) {
             getLog().error(e.getMessage(), e);
         }
