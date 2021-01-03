@@ -9,26 +9,8 @@ swagger-springboot-maven-plugin 可以根据 Java docs规范 以及springmvc 注
 需要安装环境 [Maven](https://maven.apache.org/)
 and [Java8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) .
 
-## plugin
 
-```xml
-<plugin>
-    <groupId>com.github.wu191287278</groupId>
-    <artifactId>swagger-springboot-maven-plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <configuration>
-        <host>localhost</host>
-        <basePath>/</basePath>
-        <title>测试</title>
-        <version>1.0</version>
-        <description>这是一个测试项目</description>
-        <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
-        <combineProject>api</combineProject>
-    </configuration>
-</plugin>
-```
-
-## 示例
+## RestController
 ```
 /**
  * 搜索接口
@@ -52,12 +34,45 @@ public class SearchController {
 }
 ```
 
-## 生成文档
+
+## plugin 依赖方式
+
+```xml
+<plugin>
+    <groupId>com.github.wu191287278</groupId>
+    <artifactId>swagger-springboot-maven-plugin</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <configuration>
+        <host>localhost</host>
+        <basePath>/</basePath>
+        <title>测试</title>
+        <version>1.0</version>
+        <description>这是一个测试项目</description>
+        <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+        <combineProject>api</combineProject>
+    </configuration>
+</plugin>
+```
+
+
+### 生成文档
 
 > 默认会在 classes/static文件夹下生成两个文件 swagger-ui.html,swagger.json
 
 ```
 mvn swagger-springboot:generate
+```
+
+## 命令行方式
+
+```
+mvn com.github.wu191287278:swagger-springboot-maven-plugin:1.0-SNAPSHOT:generate \
+    -Dhost=localhost\
+    -DbasePath=/ \
+    -Dtitle=测试 \
+    -Dversion=1.0 \
+    -Ddescription=这是一个测试项目 \
+    -DcombineProject=api
 ```
 
 ## 访问
