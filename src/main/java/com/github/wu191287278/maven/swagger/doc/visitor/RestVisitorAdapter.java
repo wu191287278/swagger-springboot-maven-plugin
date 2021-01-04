@@ -321,6 +321,29 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                     .description(property.getDescription()) : property;
             io.swagger.models.parameters.Parameter param = new QueryParameter()
                     .property(paramProperty);
+
+            if (parameter.getAnnotations().isEmpty() && property instanceof ObjectProperty) {
+                try {
+                    ObjectProperty objectProperty = (ObjectProperty) property;
+                    if (objectProperty.getProperties() != null && objectProperty.getProperties().size() > 0) {
+                        for (Map.Entry<String, Property> entry : objectProperty.getProperties().entrySet()) {
+                            Property value = entry.getValue();
+                            QueryParameter queryParameter = new QueryParameter()
+                                    .name(entry.getKey())
+                                    .description(value.getDescription())
+                                    .example(value.getExample() == null ? null : value.getExample().toString())
+                                    .required(value.getRequired())
+                                    .format(value.getFormat())
+                                    .type(value.getType());
+                            request.getParameters().add(queryParameter);
+                        }
+                        continue;
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+
             for (AnnotationExpr annotation : parameter.getAnnotations()) {
                 String annotationName = annotation.getNameAsString();
 

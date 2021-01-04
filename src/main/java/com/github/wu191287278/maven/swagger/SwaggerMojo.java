@@ -137,13 +137,13 @@ public class SwaggerMojo extends AbstractMojo {
                 swagger.setDefinitions(definitionsMap);
                 swagger.setTags(new ArrayList<>(tags.values()));
             }
-            write(swagger, new File(outputDirectory, "swagger.json"));
-            urls.add(ImmutableMap.of("name", project.getArtifactId(), "url", "./swagger.json"));
+            write(swagger, new File(outputDirectory, project.getArtifactId() + ".json"));
+            urls.add(ImmutableMap.of("name", project.getArtifactId(), "url", "./" + project.getArtifactId() + ".json"));
         } else {
             for (Map.Entry<String, Swagger> entry : m.entrySet()) {
                 String filename = entry.getKey() + ".json";
                 write(entry.getValue(), new File(outputDirectory, filename));
-                urls.add(ImmutableMap.of("name", entry.getKey(), "url", "./" + filename));
+                urls.add(ImmutableMap.of("name", entry.getKey(), "url", "." + filename));
             }
         }
 
