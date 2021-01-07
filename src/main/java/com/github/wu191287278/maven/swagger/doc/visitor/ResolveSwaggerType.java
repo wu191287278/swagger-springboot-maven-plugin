@@ -66,11 +66,14 @@ public class ResolveSwaggerType {
         } catch (Exception e) {
             log.error(e.getMessage());
         }
-        return new ObjectProperty();
+        return new ObjectProperty(new LinkedHashMap<>());
     }
 
     private Property resolve(ResolvedType resolvedType) {
         String clazzName = resolvedType.describe();
+        if(clazzName.contains("User")){
+            System.err.println("");
+        }
         if (resolvedType instanceof ReferenceTypeImpl) {
             clazzName = ((ReferenceTypeImpl) resolvedType).getId();
         }
@@ -95,16 +98,16 @@ public class ResolveSwaggerType {
         }
 
 
-        return new ObjectProperty();
+        return new ObjectProperty(new LinkedHashMap<>());
     }
 
-    private Map<String, Boolean> parentClassMap = new HashMap<>();
+    private final Map<String, Boolean> parentClassMap = new HashMap<>();
 
     private Property resolveRefProperty(ResolvedReferenceType resolvedReferenceType) {
-        ObjectProperty objectProperty = new ObjectProperty();
+        ObjectProperty objectProperty = new ObjectProperty(new LinkedHashMap<>());
         referencePropertyMap.put(resolvedReferenceType.toString(), objectProperty);
         if (!resolvedReferenceType.getTypeDeclaration().isEnum()) {
-            Set<ResolvedFieldDeclaration> declaredFields = resolvedReferenceType.getDeclaredFields();
+            List<ResolvedFieldDeclaration> declaredFields = resolvedReferenceType.getTypeDeclaration().getDeclaredFields();
             List<ResolvedReferenceType> allClassesAncestors = resolvedReferenceType.getAllClassesAncestors();
             for (ResolvedReferenceType allClassesAncestor : allClassesAncestors) {
                 String qualifiedName = allClassesAncestor.getQualifiedName();
@@ -221,7 +224,7 @@ public class ResolveSwaggerType {
                         }
                         return new ArrayProperty(value).uniqueItems();
                     }
-                    return new ArrayProperty(new ObjectProperty()).uniqueItems();
+                    return new ArrayProperty(new ObjectProperty(new LinkedHashMap<>())).uniqueItems();
                 } else if (Collection.class.isAssignableFrom(aClass)) {
                     if (!typeParametersMap.isEmpty()) {
                         String itemName = typeParametersMap.get(0).b.toString();
@@ -234,7 +237,7 @@ public class ResolveSwaggerType {
                         }
                         return new ArrayProperty(value);
                     }
-                    return new ArrayProperty(new ObjectProperty());
+                    return new ArrayProperty(new ObjectProperty(new LinkedHashMap<>()));
                 } else if (Map.class.isAssignableFrom(aClass) || TreeMap.class.isAssignableFrom(aClass)) {
                     if (typeParametersMap.size() > 1) {
                         String itemName = typeParametersMap.get(1).b.toString();
@@ -247,7 +250,7 @@ public class ResolveSwaggerType {
                         }
                         return new MapProperty().additionalProperties(value);
                     }
-                    return new MapProperty().additionalProperties(new ObjectProperty());
+                    return new MapProperty().additionalProperties(new ObjectProperty(new LinkedHashMap<>()));
 
                 }
             } catch (Exception e) {
@@ -464,7 +467,7 @@ public class ResolveSwaggerType {
                 Property value = entry.getValue();
                 if (value instanceof ObjectProperty) {
                     if (value.getName() == null) {
-                        model.property(entry.getKey(), new ObjectProperty());
+                        model.property(entry.getKey(), new ObjectProperty(new LinkedHashMap<>()));
                     } else {
                         model.property(entry.getKey(), new RefProperty("#/definitions/" + value.getName()));
                     }
@@ -485,12 +488,12 @@ public class ResolveSwaggerType {
                 toModel(items);
             } else if (items instanceof ObjectProperty) {
                 if (items.getName() == null) {
-                    arrayProperty.items(new ObjectProperty());
+                    arrayProperty.items(new ObjectProperty(new LinkedHashMap<>()));
                 } else {
                     arrayProperty.items(new RefProperty("#/definitions/" + items.getName()));
                 }
             }
-            return new ArrayModel().items(items != null ? items : new ObjectProperty());
+            return new ArrayModel().items(items != null ? items : new ObjectProperty(new LinkedHashMap<>()));
         }
 
         if (property instanceof MapProperty) {

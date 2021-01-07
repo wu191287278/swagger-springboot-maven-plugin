@@ -41,7 +41,7 @@ public class SearchController {
 <plugin>
     <groupId>com.github.wu191287278</groupId>
     <artifactId>swagger-springboot-maven-plugin</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
     <configuration>
         <host>localhost</host>
         <basePath>/</basePath>
@@ -70,7 +70,7 @@ mvn com.github.wu191287278:swagger-springboot-maven-plugin:1.1:generate \
     -Dhost=localhost\
     -DbasePath=/ \
     -Dtitle=test \
-    -Dversion=1.0 \
+    -Dversion=1.2 \
     -Ddescription=这是一个测试项目 \
     -DcombineProject=api
 ```
