@@ -71,9 +71,6 @@ public class ResolveSwaggerType {
 
     private Property resolve(ResolvedType resolvedType) {
         String clazzName = resolvedType.describe();
-        if(clazzName.contains("User")){
-            System.err.println("");
-        }
         if (resolvedType instanceof ReferenceTypeImpl) {
             clazzName = ((ReferenceTypeImpl) resolvedType).getId();
         }
