@@ -375,8 +375,7 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                             param = new CookieParameter()
                                     .property(property);
                             break;
-//                        case "SpringQueryMap":
-                        default:
+                        case "SpringQueryMap":
                             try {
                                 if (property instanceof ObjectProperty) {
                                     ObjectProperty objectProperty = (ObjectProperty) property;
@@ -393,7 +392,7 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                             request.getParameters().add(queryParameter);
                                         }
                                     }
-                                    continue;
+                                    break;
                                 }
                             } catch (Exception e) {
                                 log.error(e.getMessage(), e);
