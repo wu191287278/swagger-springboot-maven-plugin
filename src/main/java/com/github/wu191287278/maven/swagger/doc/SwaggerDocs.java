@@ -62,30 +62,6 @@ public class SwaggerDocs {
         this.host = host;
     }
 
-    public List<String> parseAndWrite(String sourceDirectory, List<String> libraries, String outDirectory) {
-        return parseAndWrite(sourceDirectory, libraries, outDirectory, s -> {
-        });
-    }
-
-    public List<String> parseAndWrite(String sourceDirectory, List<String> libraries, String outDirectory, Consumer<String> consumer) {
-        List<String> paths = new ArrayList<>();
-        Map<String, Swagger> m = parse(sourceDirectory, null, libraries, consumer);
-        if (m.size() == 1) {
-            String path = outDirectory + "/swagger.json";
-            writeTo(path, m.entrySet().iterator().next().getValue());
-            writeUI(outDirectory + "/swagger-ui.html");
-            paths.add(path);
-        } else {
-            for (Map.Entry<String, Swagger> entry : m.entrySet()) {
-                String path = outDirectory + "/" + entry.getKey() + "/swagger.json";
-                writeTo(path, entry.getValue());
-                writeUI(outDirectory + "/" + entry.getKey() + "/swagger-ui.html");
-                paths.add(path);
-            }
-        }
-        return paths;
-    }
-
     public void writeUI(String path) {
         File file = new File(path);
         if (file.exists()) return;

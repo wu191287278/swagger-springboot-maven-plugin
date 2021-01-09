@@ -5,7 +5,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,7 +78,6 @@ public class SwaggerMojo extends AbstractMojo {
         if ("pom".equals(packaging)) {
             return;
         }
-
         List<String> libs = new ArrayList<>();
         try {
             for (String compileClasspathElement : project.getCompileClasspathElements()) {
@@ -97,62 +99,31 @@ public class SwaggerMojo extends AbstractMojo {
             parent = parent.getParent();
         }
 
-        SwaggerDocs swaggerDocs = new SwaggerDocs(title, description, version, basePath, host);
-        swaggerDocs.setCamel(camel);
-        ResolveSwaggerType.DATE_FORMAT = dateFormat;
-        ResolveSwaggerType.TIME_FORMAT = timeFormat;
-        ResolveSwaggerType.DATETIME_FORMAT = datetimeFormat;
+        SwaggerDocs swaggerDocs = new SwaggerDocs(getTitle(), getDescription(), getVersion(), getBasePath(), getHost());
+        swaggerDocs.setCamel(getCamel());
+        ResolveSwaggerType.DATE_FORMAT = getDateFormat();
+        ResolveSwaggerType.TIME_FORMAT = getTimeFormat();
+        ResolveSwaggerType.DATETIME_FORMAT = getDatetimeFormat();
         Map<String, Swagger> m = swaggerDocs.parse(parent.getBasedir().getAbsolutePath(), null, libs, c -> {
             getLog().info("Parsing " + c);
         });
 
-        if (!outputDirectory.exists()) outputDirectory.mkdirs();
-
+        File output = getOutputDirectory();
+        if (!output.exists()) output.mkdirs();
 
         List<Map<String, String>> urls = new ArrayList<>();
 
-        Swagger swagger = m.get(project.getArtifactId());
-        if (swagger != null) {
-            if (StringUtils.isNotBlank(combineProject)) {
-                String[] combineProjects = combineProject.split(",");
-                Map<String, Path> pathMap = new TreeMap<>();
-                Map<String, Model> definitionsMap = new TreeMap<>();
-                Map<String, Tag> tags = new TreeMap<>();
-                for (String combine : combineProjects) {
-                    Swagger combineSwagger = m.get(combine.trim());
-                    if (combineSwagger == null) continue;
-                    pathMap.putAll(combineSwagger.getPaths());
-                    definitionsMap.putAll(combineSwagger.getDefinitions());
-                    for (Tag tag : combineSwagger.getTags()) {
-                        tags.put(tag.getName(), tag);
-                    }
-                    getLog().info("Combine " + combine + " swagger");
-                }
-                pathMap.putAll(swagger.getPaths());
-                definitionsMap.putAll(swagger.getDefinitions());
-                for (Tag tag : swagger.getTags()) {
-                    tags.put(tag.getName(), tag);
-                }
-                swagger.setPaths(pathMap);
-                swagger.setDefinitions(definitionsMap);
-                swagger.setTags(new ArrayList<>(tags.values()));
-            }
-            write(swagger, new File(outputDirectory, project.getArtifactId() + ".json"));
-            urls.add(ImmutableMap.of("name", project.getArtifactId(), "url", "./" + project.getArtifactId() + ".json"));
-        } else {
-            for (Map.Entry<String, Swagger> entry : m.entrySet()) {
-                String filename = entry.getKey() + ".json";
-                write(entry.getValue(), new File(outputDirectory, filename));
-                urls.add(ImmutableMap.of("name", entry.getKey(), "url", "." + filename));
-            }
+        for (Map.Entry<String, Swagger> entry : m.entrySet()) {
+            String filename = entry.getKey() + ".json";
+            write(entry.getValue(), new File(output, filename));
+            urls.add(ImmutableMap.of("name", entry.getKey(), "url", "./" + filename));
         }
-
         writeHtml(urls);
     }
 
     private void writeHtml(List<Map<String, String>> urls) {
         String html = "";
-        File file = new File(outputDirectory, "swagger-ui.html");
+        File file = new File(getOutputDirectory(), "swagger-ui.html");
         try (InputStream in = SwaggerMojo.class.getClassLoader().getResourceAsStream("META-INF/resources/swagger/swagger-ui.html");
              FileWriter writer = new FileWriter(file)) {
             if (in != null) {
@@ -178,4 +149,53 @@ public class SwaggerMojo extends AbstractMojo {
         }
     }
 
+    public String getTitle() {
+        return System.getProperty("title", title);
+    }
+
+    public String getVersion() {
+        return System.getProperty("version", version);
+    }
+
+    public String getDescription() {
+        return System.getProperty("description", description);
+    }
+
+    public String getSchema() {
+        return System.getProperty("schema", schema);
+    }
+
+    public String getHost() {
+        return System.getProperty("host", host);
+    }
+
+    public String getBasePath() {
+        return System.getProperty("basePath", basePath);
+    }
+
+    public Boolean getCamel() {
+        String property = System.getProperty("camel", String.valueOf(camel));
+        return "true".equals(property);
+    }
+
+    public String getCombineProject() {
+        return System.getProperty("combineProject", combineProject);
+    }
+
+    public String getTimeFormat() {
+        return System.getProperty("timeFormat", timeFormat);
+    }
+
+    public String getDateFormat() {
+        return System.getProperty("dateFormat", dateFormat);
+    }
+
+    public String getDatetimeFormat() {
+        return System.getProperty("datetimeFormat", datetimeFormat);
+    }
+
+    public File getOutputDirectory() {
+        String output = System.getProperty("outputDirectory", outputDirectory.getAbsolutePath());
+        return new File(output);
+    }
 }
