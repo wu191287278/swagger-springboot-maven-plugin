@@ -90,4 +90,3 @@ http://你的地址/swagger-ui.html
 |description|对应swagger description|默认 无|
 |outputDirectory|输出目录|默认classes/static文件夹|
 |camel|驼峰模式|true驼峰模式,false 下划线模式|
-|combineProject|合并多个项目swagger|项目名称逗号分割|
