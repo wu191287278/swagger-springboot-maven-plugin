@@ -49,7 +49,6 @@ public class SearchController {
         <version>1.0</version>
         <description>这是一个测试项目</description>
         <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
-        <combineProject>api</combineProject>
     </configuration>
 </plugin>
 ```
@@ -71,8 +70,7 @@ mvn com.github.wu191287278:swagger-springboot-maven-plugin:1.5:generate \
     -DbasePath=/ \
     -Dtitle=test \
     -Dversion=1.0 \
-    -Ddescription=这是一个测试项目 \
-    -DcombineProject=api
+    -Ddescription=这是一个测试项目
 ```
 
 ## 访问
