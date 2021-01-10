@@ -81,6 +81,8 @@
             ],
             layout: "StandaloneLayout",
             displayRequestDuration: true,
+            deepLinking: true,
+            validatorUrl: "none",
             responseInterceptor: function (response) {
                 var obj = response['obj'];
                 if (obj && obj['swagger']) {

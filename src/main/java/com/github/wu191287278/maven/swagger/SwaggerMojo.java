@@ -8,19 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wu191287278.maven.swagger.doc.SwaggerDocs;
 import com.github.wu191287278.maven.swagger.doc.visitor.ResolveSwaggerType;
 import com.google.common.collect.ImmutableMap;
-import io.swagger.models.Model;
-import io.swagger.models.Path;
 import io.swagger.models.Swagger;
-import io.swagger.models.Tag;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -55,9 +50,6 @@ public class SwaggerMojo extends AbstractMojo {
 
     @Parameter(name = "camel", defaultValue = "true")
     private Boolean camel;
-
-    @Parameter(name = "combineProject", defaultValue = "")
-    private String combineProject;
 
     @Parameter(name = "timeFormat", defaultValue = "13:11:43")
     public String timeFormat;
@@ -176,10 +168,6 @@ public class SwaggerMojo extends AbstractMojo {
     public Boolean getCamel() {
         String property = System.getProperty("camel", String.valueOf(camel));
         return "true".equals(property);
-    }
-
-    public String getCombineProject() {
-        return System.getProperty("combineProject", combineProject);
     }
 
     public String getTimeFormat() {

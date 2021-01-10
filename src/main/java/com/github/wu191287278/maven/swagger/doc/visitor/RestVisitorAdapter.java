@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -36,7 +38,9 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
 
     private Logger log = LoggerFactory.getLogger(RestVisitorAdapter.class);
 
-    private ResolveSwaggerType resolveSwaggerType = new ResolveSwaggerType();
+    private final ResolveSwaggerType resolveSwaggerType = new ResolveSwaggerType();
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private boolean camel = true;
 
@@ -117,8 +121,24 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                 )
                 .deprecated(request.isDeprecated());
         operation.setParameters(request.getParameters());
-        if (request.getMethodErrorDescription() != null) {
-            operation.response(500, new Response().description("{\"message\":\"" + request.getMethodErrorDescription() + "\"}"));
+        String methodErrorDescription = request.getMethodErrorDescription();
+        if (methodErrorDescription != null) {
+            if (methodErrorDescription.contains("{") && methodErrorDescription.contains("}")) {
+                try {
+                    String json = methodErrorDescription.substring(methodErrorDescription.indexOf("{"), methodErrorDescription.lastIndexOf("}") + 1);
+                    Map m = objectMapper.readValue(json, Map.class);
+                    for (Object status : m.keySet()) {
+                        Object message = m.get(status);
+                        if (message != null) {
+                            operation.response(Integer.parseInt(status.toString()), new Response().description(objectMapper.writeValueAsString(message)));
+                        }
+                    }
+                } catch (Exception e) {
+                    operation.response(500, new Response().description("{\"message\":\"" + methodErrorDescription + "\"}"));
+                }
+            } else {
+                operation.response(500, new Response().description("{\"message\":\"" + methodErrorDescription + "\"}"));
+            }
         }
 
         //方法上如果只打入注解没有url,将使用类上的url
