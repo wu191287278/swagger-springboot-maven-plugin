@@ -90,3 +90,11 @@ http://你的地址/swagger-ui.html
 |description|对应swagger description|默认 无|
 |outputDirectory|输出目录|默认classes/static文件夹|
 |camel|驼峰模式|true驼峰模式,false 下划线模式|
+
+## javadoc 标签
+
+> javadoc 额外补充标签
+
+|变量|说明|备注|
+|---|---|---|
+|@responseStatus|状态码说明|@responseStatus 429 请求过多|
