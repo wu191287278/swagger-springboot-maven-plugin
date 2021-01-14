@@ -329,12 +329,7 @@ public class JavaxRsVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                 if (split.length > 1 && NumberUtils.isDigits(split[0])) {
                                     String reason = String.join("", Arrays.copyOfRange(split, 1, split.length));
                                     Response response = new Response();
-                                    if (reason.startsWith("{")) {
-                                        response.description(reason);
-                                    } else {
-                                        response.description("{\"message\":\"" + reason + "\"}");
-                                    }
-
+                                    response.description(reason);
                                     request.getResponseStatus().put(Integer.parseInt(split[0]), response);
                                 }
                             } catch (Exception e) {

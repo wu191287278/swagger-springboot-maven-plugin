@@ -6,7 +6,7 @@
 
     <groupId>com.github.wu191287278</groupId>
     <artifactId>swagger-springboot-maven-plugin</artifactId>
-    <version>1.6</version>
+    <version>1.7-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>swagger-springboot-maven-plugin</name>
     <description>Swagger plugin for springboot</description>
@@ -140,7 +140,7 @@
                 <configuration>
                     <serverId>sonatype_releases</serverId>
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
             <plugin>
