@@ -18,6 +18,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.javadoc.Javadoc;
 import com.github.javaparser.javadoc.JavadocBlockTag;
 import com.github.javaparser.javadoc.description.JavadocDescription;
+import com.github.javaparser.javadoc.description.JavadocDescriptionElement;
 import com.github.wu191287278.maven.swagger.doc.domain.Request;
 import com.github.wu191287278.maven.swagger.doc.utils.CamelUtils;
 import com.google.common.collect.ImmutableMap;
@@ -28,6 +29,7 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.RefProperty;
 import io.swagger.models.properties.StringProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,26 +123,14 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                 )
                 .deprecated(request.isDeprecated());
         operation.setParameters(request.getParameters());
-        String methodErrorDescription = request.getMethodErrorDescription();
-        if (methodErrorDescription != null) {
-            if (methodErrorDescription.contains("{") && methodErrorDescription.contains("}")) {
-                try {
-                    String json = methodErrorDescription.substring(methodErrorDescription.indexOf("{"), methodErrorDescription.lastIndexOf("}") + 1);
-                    Map m = objectMapper.readValue(json, Map.class);
-                    for (Object status : m.keySet()) {
-                        Object message = m.get(status);
-                        if (message != null) {
-                            operation.response(Integer.parseInt(status.toString()), new Response().description(objectMapper.writeValueAsString(message)));
-                        }
-                    }
-                } catch (Exception e) {
-                    operation.response(500, new Response().description("{\"message\":\"" + methodErrorDescription + "\"}"));
-                }
-            } else {
-                operation.response(500, new Response().description("{\"message\":\"" + methodErrorDescription + "\"}"));
-            }
+
+        if (request.getMethodErrorDescription() != null) {
+            operation.response(500, new Response().description("{\"message\":\"" + request.getMethodErrorDescription() + "\"}"));
         }
 
+        for (Map.Entry<Integer, Response> entry : request.getResponseStatus().entrySet()) {
+            operation.response(entry.getKey(), entry.getValue());
+        }
         //方法上如果只打入注解没有url,将使用类上的url
         List<String> pathList = request.getPaths();
         if (pathList.isEmpty()) {
@@ -491,8 +481,28 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                         case "return":
                             request.setReturnDescription(blockTag.getContent().toText());
                             break;
-                        case "apiNote":
+                        case "apinote":
                             request.setMethodNotes(blockTag.getContent().toText());
+                            break;
+                        case "responsestatus":
+                            try {
+                                String text = blockTag.getContent().toText();
+                                String[] split = text.trim().split("\\s+|\\t");
+                                if (split.length > 1 && NumberUtils.isDigits(split[0])) {
+                                    String reason = String.join("", Arrays.copyOfRange(split, 1, split.length));
+                                    Response response = new Response();
+                                    if (reason.startsWith("{")) {
+                                        response.description(reason);
+                                    } else {
+                                        response.description("{\"message\":\"" + reason + "\"}");
+                                    }
+
+                                    request.getResponseStatus().put(Integer.parseInt(split[0]), response);
+                                }
+                            } catch (Exception e) {
+                                log.error(e.getMessage(), e);
+                            }
+                            break;
                         default:
                             blockTag.getName().ifPresent(t -> request.getParamsDescription().put(t, blockTag.getContent().toText()));
                             break;
@@ -551,4 +561,5 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
         this.camel = camel;
         return this;
     }
+
 }

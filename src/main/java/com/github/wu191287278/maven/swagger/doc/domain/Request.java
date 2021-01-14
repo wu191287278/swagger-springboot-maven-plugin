@@ -1,10 +1,8 @@
 package com.github.wu191287278.maven.swagger.doc.domain;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import io.swagger.models.Response;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.properties.Property;
 
@@ -46,6 +44,8 @@ public class Request {
     private List<String> consumes = new ArrayList<>();
 
     private List<Parameter> parameters = new ArrayList<>();
+
+    private Map<Integer, Response> responseStatus = new TreeMap<>();
 
     private boolean deprecated = false;
 
@@ -191,5 +191,13 @@ public class Request {
 
     public void setDeprecated(boolean deprecated) {
         this.deprecated = deprecated;
+    }
+
+    public Map<Integer, Response> getResponseStatus() {
+        return responseStatus;
+    }
+
+    public void setResponseStatus(Map<Integer, Response> responseStatus) {
+        this.responseStatus = responseStatus;
     }
 }

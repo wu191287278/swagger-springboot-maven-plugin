@@ -24,6 +24,7 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.RefProperty;
 import io.swagger.models.properties.StringProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 public class JavaxRsVisitorAdapter extends VoidVisitorAdapter<Swagger> {
 
@@ -318,8 +319,27 @@ public class JavaxRsVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                         case "return":
                             request.setReturnDescription(blockTag.getContent().toText());
                             break;
-                        case "apiNote":
+                        case "apinote":
                             request.setMethodNotes(blockTag.getContent().toText());
+                            break;
+                        case "responsestatus":
+                            try {
+                                String text = blockTag.getContent().toText();
+                                String[] split = text.trim().split("\\s+|\\t");
+                                if (split.length > 1 && NumberUtils.isDigits(split[0])) {
+                                    String reason = String.join("", Arrays.copyOfRange(split, 1, split.length));
+                                    Response response = new Response();
+                                    if (reason.startsWith("{")) {
+                                        response.description(reason);
+                                    } else {
+                                        response.description("{\"message\":\"" + reason + "\"}");
+                                    }
+
+                                    request.getResponseStatus().put(Integer.parseInt(split[0]), response);
+                                }
+                            } catch (Exception e) {
+                            }
+                            break;
                         default:
                             blockTag.getName().ifPresent(t -> request.getParamsDescription().put(t, blockTag.getContent().toText()));
                             break;
