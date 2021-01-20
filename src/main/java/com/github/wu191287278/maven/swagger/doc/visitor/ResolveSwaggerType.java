@@ -104,6 +104,20 @@ public class ResolveSwaggerType {
         ObjectProperty objectProperty = new ObjectProperty(new LinkedHashMap<>());
         referencePropertyMap.put(resolvedReferenceType.toString(), objectProperty);
         if (!resolvedReferenceType.getTypeDeclaration().isEnum()) {
+            List<ResolvedReferenceType> ancestors = resolvedReferenceType.getTypeDeclaration().getAncestors();
+            for (ResolvedReferenceType ancestor : ancestors) {
+                try {
+                    Property property = resolveRefProperty(ancestor);
+                    if (property instanceof ObjectProperty) {
+                        ObjectProperty op = (ObjectProperty) property;
+                        for (Map.Entry<String, Property> entry : op.getProperties().entrySet()) {
+                            objectProperty.property(entry.getKey(), entry.getValue());
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage());
+                }
+            }
             List<ResolvedFieldDeclaration> declaredFields = resolvedReferenceType.getTypeDeclaration().getDeclaredFields();
             List<ResolvedReferenceType> allClassesAncestors = resolvedReferenceType.getAllClassesAncestors();
             for (ResolvedReferenceType allClassesAncestor : allClassesAncestors) {
@@ -171,7 +185,6 @@ public class ResolveSwaggerType {
                             if (jsonProperty != null && StringUtils.isNotBlank(jsonProperty.value())) {
                                 name = jsonProperty.value();
                             }
-
                         } catch (Exception e) {
                             log.warn(e.getMessage(), e);
                         }
@@ -251,7 +264,7 @@ public class ResolveSwaggerType {
 
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         }
 

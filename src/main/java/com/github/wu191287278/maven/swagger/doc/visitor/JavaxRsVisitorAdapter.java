@@ -253,6 +253,7 @@ public class JavaxRsVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                             request.getParameters().add(queryParameter);
                                         }
                                     }
+                                    param = null;
                                     break;
                                 }
                             } catch (Exception e) {
@@ -297,10 +298,12 @@ public class JavaxRsVisitorAdapter extends VoidVisitorAdapter<Swagger> {
 
             }
 
-            param.setDescription(property.getDescription() != null ? property.getDescription() : description);
-            param.setName(variableName);
 
-            request.getParameters().add(param);
+            if (param != null) {
+                param.setDescription(property.getDescription() != null ? property.getDescription() : description);
+                param.setName(variableName);
+                request.getParameters().add(param);
+            }
         }
     }
 

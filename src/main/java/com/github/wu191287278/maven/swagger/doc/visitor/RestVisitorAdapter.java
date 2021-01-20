@@ -24,10 +24,7 @@ import com.github.wu191287278.maven.swagger.doc.utils.CamelUtils;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.models.*;
 import io.swagger.models.parameters.*;
-import io.swagger.models.properties.ObjectProperty;
-import io.swagger.models.properties.Property;
-import io.swagger.models.properties.RefProperty;
-import io.swagger.models.properties.StringProperty;
+import io.swagger.models.properties.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -344,7 +341,13 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                     .example(value.getExample() == null ? null : value.getExample().toString())
                                     .required(value.getRequired())
                                     .format(value.getFormat())
+                                    .readOnly(value.getReadOnly())
                                     .type(value.getType());
+                            if (value instanceof ArrayProperty) {
+                                ArrayProperty arrayProperty = (ArrayProperty) value;
+                                queryParameter.items(arrayProperty.getItems());
+                                queryParameter.setUniqueItems(arrayProperty.getUniqueItems());
+                            }
                             request.getParameters().add(queryParameter);
                         }
                         continue;
@@ -356,7 +359,6 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
 
             for (AnnotationExpr annotation : parameter.getAnnotations()) {
                 String annotationName = annotation.getNameAsString();
-
                 if (annotation.isAnnotationExpr()) {
                     switch (annotationName) {
                         case "PathVariable":
@@ -398,16 +400,24 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                                     .example(value.getExample() == null ? null : value.getExample().toString())
                                                     .required(value.getRequired())
                                                     .format(value.getFormat())
+                                                    .readOnly(value.getReadOnly())
                                                     .type(value.getType());
+                                            if (value instanceof ArrayProperty) {
+                                                ArrayProperty arrayProperty = (ArrayProperty) value;
+                                                queryParameter.items(arrayProperty.getItems());
+                                                queryParameter.setUniqueItems(arrayProperty.getUniqueItems());
+                                            }
                                             request.getParameters().add(queryParameter);
                                         }
                                     }
+                                    param = null;
                                     break;
                                 }
                             } catch (Exception e) {
                                 log.error(e.getMessage(), e);
                             }
                     }
+
 
                     if (param instanceof PathParameter || param instanceof QueryParameter || param instanceof HeaderParameter || param instanceof CookieParameter) {
                         if (annotation.isSingleMemberAnnotationExpr()) {
@@ -458,11 +468,12 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                 }
             }
 
+            if (param != null) {
+                param.setDescription(property.getDescription() != null ? property.getDescription() : description);
+                param.setName(variableName);
+                request.getParameters().add(param);
+            }
 
-            param.setDescription(property.getDescription() != null ? property.getDescription() : description);
-            param.setName(variableName);
-
-            request.getParameters().add(param);
         }
     }
 
