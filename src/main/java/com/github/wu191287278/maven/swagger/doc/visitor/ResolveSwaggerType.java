@@ -60,6 +60,8 @@ public class ResolveSwaggerType {
 
     public static String DATETIME_FORMAT = "2018-09-10T13:11:43Z";
 
+    public static Boolean RECURSION_ANCESTOR = false;
+
     public Property resolve(Type type) {
         try {
             return resolve(type.resolve());
@@ -71,6 +73,9 @@ public class ResolveSwaggerType {
 
     private Property resolve(ResolvedType resolvedType) {
         String clazzName = resolvedType.describe();
+        if ("java.lang.Object".equals(clazzName)) {
+            return new ObjectProperty();
+        }
         if (resolvedType instanceof ReferenceTypeImpl) {
             clazzName = ((ReferenceTypeImpl) resolvedType).getId();
         }
@@ -104,18 +109,29 @@ public class ResolveSwaggerType {
         ObjectProperty objectProperty = new ObjectProperty(new LinkedHashMap<>());
         referencePropertyMap.put(resolvedReferenceType.toString(), objectProperty);
         if (!resolvedReferenceType.getTypeDeclaration().isEnum()) {
-            List<ResolvedReferenceType> ancestors = resolvedReferenceType.getTypeDeclaration().getAncestors();
-            for (ResolvedReferenceType ancestor : ancestors) {
-                try {
-                    Property property = resolveRefProperty(ancestor);
-                    if (property instanceof ObjectProperty) {
-                        ObjectProperty op = (ObjectProperty) property;
-                        for (Map.Entry<String, Property> entry : op.getProperties().entrySet()) {
-                            objectProperty.property(entry.getKey(), entry.getValue());
+            if (RECURSION_ANCESTOR) {
+                List<ResolvedReferenceType> ancestors = resolvedReferenceType.getTypeDeclaration().getAncestors();
+                for (ResolvedReferenceType ancestor : ancestors) {
+                    try {
+                        if (!ancestor.getTypeDeclaration().isClass()) {
+                            continue;
                         }
+                        Class<?> aClass = Class.forName(ancestor.getQualifiedName());
+                        if (Collection.class.isAssignableFrom(aClass)
+                                || Iterable.class.isAssignableFrom(aClass)
+                                || Map.class.isAssignableFrom(aClass)) {
+                            continue;
+                        }
+                        Property property = resolveRefProperty(ancestor);
+                        if (property instanceof ObjectProperty) {
+                            ObjectProperty op = (ObjectProperty) property;
+                            for (Map.Entry<String, Property> entry : op.getProperties().entrySet()) {
+                                objectProperty.property(entry.getKey(), entry.getValue());
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
                     }
-                } catch (Exception e) {
-                    log.error(e.getMessage());
                 }
             }
             List<ResolvedFieldDeclaration> declaredFields = resolvedReferenceType.getTypeDeclaration().getDeclaredFields();

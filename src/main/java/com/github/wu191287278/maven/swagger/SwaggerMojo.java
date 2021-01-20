@@ -60,6 +60,9 @@ public class SwaggerMojo extends AbstractMojo {
     @Parameter(name = "datetimeFormat", defaultValue = "2018-09-10T13:11:43Z")
     public String datetimeFormat;
 
+    @Parameter(name = "recursionAncestor", defaultValue = "false")
+    public Boolean recursionAncestor;
+
     @Parameter(name = "outputDirectory", defaultValue = "${project.build.outputDirectory}/static")
     private File outputDirectory;
 
@@ -96,6 +99,7 @@ public class SwaggerMojo extends AbstractMojo {
         ResolveSwaggerType.DATE_FORMAT = getDateFormat();
         ResolveSwaggerType.TIME_FORMAT = getTimeFormat();
         ResolveSwaggerType.DATETIME_FORMAT = getDatetimeFormat();
+        ResolveSwaggerType.RECURSION_ANCESTOR = getRecursionAncestor();
         Map<String, Swagger> m = swaggerDocs.parse(parent.getBasedir().getAbsolutePath(), null, libs, c -> {
             getLog().info("Parsing " + c);
         });
@@ -185,5 +189,10 @@ public class SwaggerMojo extends AbstractMojo {
     public File getOutputDirectory() {
         String output = System.getProperty("outputDirectory", outputDirectory.getAbsolutePath());
         return new File(output);
+    }
+
+    public boolean getRecursionAncestor() {
+        String property = System.getProperty("recursionAncestor", String.valueOf(recursionAncestor));
+        return "true".equals(property);
     }
 }
