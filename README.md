@@ -90,7 +90,7 @@ http://你的地址/swagger-ui.html
 |description|对应swagger description|默认 无|
 |outputDirectory|输出目录|默认classes/static文件夹|
 |camel|驼峰模式|true驼峰模式,false 下划线模式|
-|recursionAncestor|递归解析model对象|true递归,false不递归. 默认true. 开启后会不断递归父类对象属性,性能较差|
+|recursionAncestor|递归解析对象|true递归,false不递归. 默认false. 开启后会不断递归父类对象属性,性能较差|
 
 ## javadoc 标签
 
