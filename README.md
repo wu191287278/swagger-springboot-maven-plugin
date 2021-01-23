@@ -62,6 +62,11 @@ public class SearchController {
 mvn swagger-springboot:generate
 ```
 
+### 打入jar包中
+```
+mvn clean swagger-springboot:generate package
+```
+
 ## 命令行方式
 
 ```
