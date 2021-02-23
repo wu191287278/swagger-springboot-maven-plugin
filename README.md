@@ -22,9 +22,12 @@ public class SearchController {
     /**
      * 搜索用户
      *
-     * @param nickname 用户昵称
-     * @throws 未找到用户
-     * @return 用户列表
+     * @param nickname 用户昵称.
+     * @apiNote 这是一大段描述.
+     * @throws  未找到用户.
+     * @return  用户列表.
+     * @responseStatus 403 访问被拒绝.
+     * @responseStatus 400 参数错误.
      */
     @GetMapping(value = "user")
     public String user(@RequestParam(value = "nickname") String nickname) throws NotFoundException{
