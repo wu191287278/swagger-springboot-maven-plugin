@@ -6,7 +6,7 @@
 
     <groupId>com.github.wu191287278</groupId>
     <artifactId>swagger-springboot-maven-plugin</artifactId>
-    <version>1.7</version>
+    <version>1.8</version>
     <packaging>maven-plugin</packaging>
     <name>swagger-springboot-maven-plugin</name>
     <description>Swagger plugin for springboot</description>

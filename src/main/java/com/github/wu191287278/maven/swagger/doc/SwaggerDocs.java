@@ -201,6 +201,19 @@ public class SwaggerDocs {
         } else {
             files.add(sourceDirectoryFile);
         }
+
+        File targetDirectoryFile = new File(sourceDirectory, "/target/generated-sources/annotations/" + basePackage.replace(".", "/"));
+
+        if (!targetDirectoryFile.exists()) {
+            File[] listFiles = targetDirectoryFile.listFiles();
+            if (listFiles != null) {
+                for (File file : listFiles) {
+                    filterSourceDirectory(file.getAbsolutePath(), basePackage, files);
+                }
+            }
+        } else {
+            files.add(targetDirectoryFile);
+        }
     }
 
     public void setCamel(Boolean camel) {
