@@ -101,7 +101,7 @@ http://你的地址/swagger-ui.html
 |outputDirectory|输出目录|默认classes/static文件夹|
 |camel|驼峰模式|true驼峰模式,false 下划线模式|
 |includeArtifactIds|只解析指定指定项目|api,service 逗号分割|
-|excludePackage|排除包路径前缀|例如 com.github.wuyu191287278.client|
+|excludeBasePackage|排除包路径前缀|例如 com.github.wuyu191287278.client|
 |recursionAncestor|递归解析对象|true递归,false不递归. 默认false. 开启后会不断递归父类对象属性,可能会引起死循环|
 
 ## javadoc 标签
