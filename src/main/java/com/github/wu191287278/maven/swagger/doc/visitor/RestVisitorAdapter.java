@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -18,7 +17,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.javadoc.Javadoc;
 import com.github.javaparser.javadoc.JavadocBlockTag;
 import com.github.javaparser.javadoc.description.JavadocDescription;
-import com.github.javaparser.javadoc.description.JavadocDescriptionElement;
+import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.wu191287278.maven.swagger.doc.domain.Request;
 import com.github.wu191287278.maven.swagger.doc.utils.CamelUtils;
 import com.google.common.collect.ImmutableMap;
@@ -56,6 +55,8 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
     );
 
     private final Map<String, String> headers = new HashMap<>();
+
+    private String basePackage;
 
     {
         try {
@@ -160,7 +161,21 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                 .collect(Collectors.toList());
 
         if (annotationExprs.isEmpty()) return;
-        consumer.accept(n.getNameAsString());
+        String fullName = n.getNameAsString();
+        if (basePackage != null && !basePackage.isEmpty()) {
+            try {
+                ResolvedReferenceTypeDeclaration resolve = n.resolve();
+                String packageName = resolve.getPackageName();
+                fullName = packageName + "." + n.getNameAsString();
+                if (!basePackage.startsWith(packageName)) {
+                    return;
+                }
+            } catch (Exception ignore) {
+
+            }
+        }
+        consumer.accept(fullName);
+
         Tag tag = new Tag()
                 .name(n.getNameAsString());
         swagger.addTag(tag);
@@ -568,4 +583,8 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
         return this;
     }
 
+    public RestVisitorAdapter setBasePackage(String basePackage) {
+        this.basePackage = basePackage;
+        return this;
+    }
 }

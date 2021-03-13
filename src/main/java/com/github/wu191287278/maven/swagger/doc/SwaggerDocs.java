@@ -2,7 +2,6 @@ package com.github.wu191287278.maven.swagger.doc;
 
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
@@ -14,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JarTypeSolver;
@@ -92,10 +92,10 @@ public class SwaggerDocs {
         }
     }
 
-    public Map<String, Swagger> parse(String sourceDirectory, String basePackage, List<String> libraries, Consumer<String> consumer) {
+    public Map<String, Swagger> parse(String sourceDirectory, String basePackage, String excludeBasePackage, List<String> libraries, Consumer<String> consumer) {
         log.info("Parsing " + sourceDirectory);
-        List<File> filteredDirectories = getSourceDirectories(sourceDirectory, basePackage);
-        List<File> sourceDirectories = getSourceDirectories(sourceDirectory, basePackage);
+        List<File> filteredDirectories = getSourceDirectories(sourceDirectory);
+        List<File> sourceDirectories = getSourceDirectories(sourceDirectory);
         Map<String, Swagger> swaggerMap = new TreeMap<>();
         for (File filteredDirectory : filteredDirectories) {
             String projectPath = filteredDirectory.getAbsolutePath().replace("src/main/java", "")
@@ -120,7 +120,8 @@ public class SwaggerDocs {
 
 
             final RestVisitorAdapter restVisitorAdapter = new RestVisitorAdapter(consumer)
-                    .setCamel(camel);
+                    .setCamel(camel)
+                    .setBasePackage(basePackage);
             final JavaxRsVisitorAdapter javaxRsVisitorAdapter = new JavaxRsVisitorAdapter();
             Info info = new Info()
                     .title(this.title)
@@ -142,8 +143,30 @@ public class SwaggerDocs {
             List<ParseResult<CompilationUnit>> parseResults = sourceRoot.tryToParseParallelized();
 
             for (ParseResult<CompilationUnit> parseResult : parseResults) {
-                parseResult.ifSuccessful(r -> r.accept(javaxRsVisitorAdapter, swagger));
-                parseResult.ifSuccessful(r -> r.accept(restVisitorAdapter, swagger));
+                if (!parseResult.isSuccessful()) {
+                    continue;
+                }
+                Optional<CompilationUnit> result = parseResult.getResult();
+                if (!result.isPresent()) {
+                    continue;
+                }
+                try {
+                    CompilationUnit r = result.get();
+                    if (excludeBasePackage != null && !excludeBasePackage.isEmpty()) {
+                        Optional<PackageDeclaration> packageDeclarationOptional = r.getPackageDeclaration();
+                        if (packageDeclarationOptional.isPresent()) {
+                            String packageName = packageDeclarationOptional.get().getNameAsString();
+                            if (packageName != null && packageName.startsWith(excludeBasePackage)) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    r.accept(javaxRsVisitorAdapter, swagger);
+                    r.accept(restVisitorAdapter, swagger);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
             for (Map.Entry<String, Model> entry : javaxRsVisitorAdapter.getModelMap().entrySet()) {
                 swagger.model(entry.getKey(), entry.getValue());
@@ -152,6 +175,7 @@ public class SwaggerDocs {
                 swagger.model(entry.getKey(), entry.getValue());
             }
 
+            Set<String> includeTags = new HashSet<>();
             if (swagger.getPaths() != null && !swagger.getPaths().isEmpty()) {
                 String projectName = new File(projectPath).getName();
                 swagger.getInfo().title(title);
@@ -160,7 +184,9 @@ public class SwaggerDocs {
                 swaggerMap.put(projectName, swagger);
                 for (Path path : swagger.getPaths().values()) {
                     for (Operation operation : path.getOperations()) {
-                        List<String> tags = operation.getTags();
+                        if (operation.getTags() != null) {
+                            includeTags.addAll(operation.getTags());
+                        }
                         Map<String, List<String>> security = Stream.of("api_key")
                                 .collect(Collectors.toMap(s -> s, s -> new ArrayList<>()));
                         operation.setSecurity(Collections.singletonList(security));
@@ -169,46 +195,49 @@ public class SwaggerDocs {
             }
 
             if (swagger.getTags() != null) {
-                Map<String, Tag> tagMap = swagger.getTags()
-                        .stream()
-                        .collect(Collectors.toMap(Tag::getName, t -> t));
-                swagger.tags(new ArrayList<>(new TreeMap<>(tagMap).values()));
+                Map<String, Tag> m = new TreeMap<>();
+                for (Tag tag : swagger.getTags()) {
+                    if (includeTags.contains(tag.getName())) {
+                        m.put(tag.getName(), tag);
+                    }
+                }
+                swagger.tags(new ArrayList<>(m.values()));
             }
         }
 
         return swaggerMap;
     }
 
-    private List<File> getSourceDirectories(String sourceDirectory, String basePackage) {
+    private List<File> getSourceDirectories(String sourceDirectory) {
         List<File> files = new ArrayList<>();
-        filterSourceDirectory(sourceDirectory, basePackage == null ? "" : basePackage, files);
+        filterSourceDirectory(sourceDirectory, files);
         return files;
     }
 
-    private void filterSourceDirectory(String sourceDirectory, String basePackage, List<File> files) {
+    private void filterSourceDirectory(String sourceDirectory, List<File> files) {
         File parentDirectoryFile = new File(sourceDirectory);
         if (!parentDirectoryFile.isDirectory()) return;
 
-        File sourceDirectoryFile = new File(sourceDirectory, "/src/main/java/" + basePackage.replace(".", "/"));
+        File sourceDirectoryFile = new File(sourceDirectory, "/src/main/java/");
 
         if (!sourceDirectoryFile.exists()) {
             File[] listFiles = parentDirectoryFile.listFiles();
             if (listFiles != null) {
                 for (File file : listFiles) {
-                    filterSourceDirectory(file.getAbsolutePath(), basePackage, files);
+                    filterSourceDirectory(file.getAbsolutePath(), files);
                 }
             }
         } else {
             files.add(sourceDirectoryFile);
         }
 
-        File targetDirectoryFile = new File(sourceDirectory, "/target/generated-sources/annotations/" + basePackage.replace(".", "/"));
+        File targetDirectoryFile = new File(sourceDirectory, "/target/generated-sources/annotations/");
 
         if (!targetDirectoryFile.exists()) {
             File[] listFiles = targetDirectoryFile.listFiles();
             if (listFiles != null) {
                 for (File file : listFiles) {
-                    filterSourceDirectory(file.getAbsolutePath(), basePackage, files);
+                    filterSourceDirectory(file.getAbsolutePath(), files);
                 }
             }
         } else {

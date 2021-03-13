@@ -5,21 +5,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wu191287278.maven.swagger.doc.SwaggerDocs;
 import com.github.wu191287278.maven.swagger.doc.visitor.ResolveSwaggerType;
 import com.google.common.collect.ImmutableMap;
-import io.swagger.models.Swagger;
+import io.swagger.models.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 
@@ -66,13 +62,34 @@ public class SwaggerMojo extends AbstractMojo {
     @Parameter(name = "outputDirectory", defaultValue = "${project.build.outputDirectory}/static")
     private File outputDirectory;
 
+    @Parameter(name = "includeArtifactIds", defaultValue = "")
+    private String includeArtifactIds;
+
+    @Parameter(name = "excludeBasePackage", defaultValue = "")
+    private String excludeBasePackage;
+
+    @Parameter(name = "basePackage", defaultValue = "")
+    private String basePackage;
+
+    @Parameter(name = "skip", defaultValue = "false")
+    private String skip;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() {
+        if (isSkip()) {
+            return;
+        }
+        Set<String> includeArtifactIdsSet = toSet(getIncludeArtifactIds());
+
+        if (!includeArtifactIdsSet.isEmpty() && !includeArtifactIdsSet.contains(project.getArtifactId().toLowerCase())) {
+            return;
+        }
+
         String packaging = project.getPackaging();
         if ("pom".equals(packaging)) {
             return;
         }
+
         List<String> libs = new ArrayList<>();
         try {
             for (String compileClasspathElement : project.getCompileClasspathElements()) {
@@ -94,13 +111,14 @@ public class SwaggerMojo extends AbstractMojo {
             parent = parent.getParent();
         }
 
+
         SwaggerDocs swaggerDocs = new SwaggerDocs(getTitle(), getDescription(), getVersion(), getBasePath(), getHost());
         swaggerDocs.setCamel(getCamel());
         ResolveSwaggerType.DATE_FORMAT = getDateFormat();
         ResolveSwaggerType.TIME_FORMAT = getTimeFormat();
         ResolveSwaggerType.DATETIME_FORMAT = getDatetimeFormat();
         ResolveSwaggerType.RECURSION_ANCESTOR = getRecursionAncestor();
-        Map<String, Swagger> m = swaggerDocs.parse(parent.getBasedir().getAbsolutePath(), null, libs, c -> {
+        Map<String, Swagger> m = swaggerDocs.parse(parent.getBasedir().getAbsolutePath(), getBasePackage(),getExcludeBasePackage(), libs, c -> {
             getLog().info("Parsing " + c);
         });
 
@@ -108,6 +126,16 @@ public class SwaggerMojo extends AbstractMojo {
         if (!output.exists()) output.mkdirs();
 
         List<Map<String, String>> urls = new ArrayList<>();
+
+        if (!includeArtifactIdsSet.isEmpty()) {
+            Map<String, Swagger> newM = new HashMap<>();
+            for (Map.Entry<String, Swagger> entry : m.entrySet()) {
+                if (includeArtifactIdsSet.contains(entry.getKey())) {
+                    newM.put(entry.getKey(), entry.getValue());
+                }
+            }
+            m = newM;
+        }
 
         for (Map.Entry<String, Swagger> entry : m.entrySet()) {
             String filename = entry.getKey() + ".json";
@@ -194,5 +222,36 @@ public class SwaggerMojo extends AbstractMojo {
     public boolean getRecursionAncestor() {
         String property = System.getProperty("recursionAncestor", String.valueOf(recursionAncestor));
         return "true".equals(property);
+    }
+
+    public String getIncludeArtifactIds() {
+        return System.getProperty("includeArtifactIds", includeArtifactIds);
+    }
+
+    public String getExcludeBasePackage() {
+        return System.getProperty("excludeBasePackage", excludeBasePackage);
+    }
+
+    public String getBasePackage() {
+        return System.getProperty("basePackage", basePackage);
+    }
+
+    public boolean isSkip() {
+        String isSkip = System.getProperty("skip", skip);
+        return "true".equals(isSkip);
+    }
+
+    private Set<String> toSet(String str) {
+        Set<String> set = new HashSet<>();
+        if (str != null && !str.isEmpty()) {
+            for (String s : str.split(",")) {
+                String trim = s.toLowerCase().trim();
+                if (trim.isEmpty()) {
+                    continue;
+                }
+                set.add(trim);
+            }
+        }
+        return set;
     }
 }

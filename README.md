@@ -9,8 +9,8 @@ swagger-springboot-maven-plugin 可以根据 Java docs规范 以及springmvc 注
 需要安装环境 [Maven](https://maven.apache.org/)
 and [Java8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) .
 
-
 ## RestController
+
 ```
 /**
  * 搜索接口
@@ -28,6 +28,8 @@ public class SearchController {
      * @return  用户列表.
      * @responseStatus 403 访问被拒绝.
      * @responseStatus 400 参数错误.
+     * @apiNote 这是一大段描述
+     * 这是一大段描述后面的内容
      */
     @GetMapping(value = "user")
     public String user(@RequestParam(value = "nickname") String nickname) throws NotFoundException{
@@ -37,14 +39,14 @@ public class SearchController {
 }
 ```
 
-
 ## plugin 依赖方式
 
 ```xml
+
 <plugin>
     <groupId>com.github.wu191287278</groupId>
     <artifactId>swagger-springboot-maven-plugin</artifactId>
-    <version>1.8</version>
+    <version>1.9</version>
     <configuration>
         <host>localhost</host>
         <basePath>/</basePath>
@@ -56,7 +58,6 @@ public class SearchController {
 </plugin>
 ```
 
-
 ### 生成文档
 
 > 默认会在 classes/static文件夹下生成两个文件 swagger-ui.html,swagger.json
@@ -66,6 +67,7 @@ mvn swagger-springboot:generate
 ```
 
 ### 打入jar包中
+
 ```
 mvn clean swagger-springboot:generate package
 ```
@@ -73,7 +75,7 @@ mvn clean swagger-springboot:generate package
 ## 命令行方式
 
 ```
-mvn com.github.wu191287278:swagger-springboot-maven-plugin:1.8:generate \
+mvn com.github.wu191287278:swagger-springboot-maven-plugin:1.9:generate \
     -Dhost=localhost\
     -DbasePath=/ \
     -Dtitle=test \
@@ -98,7 +100,9 @@ http://你的地址/swagger-ui.html
 |description|对应swagger description|默认 无|
 |outputDirectory|输出目录|默认classes/static文件夹|
 |camel|驼峰模式|true驼峰模式,false 下划线模式|
-|recursionAncestor|递归解析对象|true递归,false不递归. 默认false. 开启后会不断递归父类对象属性,性能较差|
+|includeArtifactIds|只解析指定指定项目|api,service 逗号分割|
+|excludePackage|排除包路径前缀|例如 com.github.wuyu191287278.client|
+|recursionAncestor|递归解析对象|true递归,false不递归. 默认false. 开启后会不断递归父类对象属性,可能会引起死循环|
 
 ## javadoc 标签
 
