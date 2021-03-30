@@ -387,6 +387,7 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                 bodyParameter.schema(model);
                             }
                             param = bodyParameter;
+                            request.getConsumes().add("application/json");
                             break;
 
                         case "RequestPart":
@@ -551,6 +552,9 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
         Property property = resolveSwaggerType.resolve(type);
         if (property.getName() != null) {
             request.setReturnType(new RefProperty("#/definitions/" + property.getName()));
+            if(request.getProduces().isEmpty()){
+                request.getProduces().add("application/json");
+            }
         } else {
             request.setReturnType(property);
         }

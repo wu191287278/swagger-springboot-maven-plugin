@@ -603,6 +603,8 @@ public class ResolveSwaggerType {
                 "java.time.ZonedDateTime".equals(clazzName) ||
                 "java.joda.LocalDateTime".equals(clazzName) ||
                 "java.joda.ZonedDateTime".equals(clazzName) ||
+                "java.time.Instant".equals(clazzName) ||
+                "java.time.OffsetTime".equals(clazzName) ||
                 "java.sql.Timestamp".equals(clazzName)
 
         ) {

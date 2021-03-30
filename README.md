@@ -46,7 +46,7 @@ public class SearchController {
 <plugin>
     <groupId>com.github.wu191287278</groupId>
     <artifactId>swagger-springboot-maven-plugin</artifactId>
-    <version>1.9</version>
+    <version>1.9.1</version>
     <configuration>
         <host>localhost</host>
         <basePath>/</basePath>
@@ -75,7 +75,7 @@ mvn clean swagger-springboot:generate package
 ## 命令行方式
 
 ```
-mvn com.github.wu191287278:swagger-springboot-maven-plugin:1.9:generate \
+mvn com.github.wu191287278:swagger-springboot-maven-plugin:1.9.1:generate \
     -Dhost=localhost\
     -DbasePath=/ \
     -Dtitle=test \
@@ -103,6 +103,7 @@ http://你的地址/swagger-ui.html
 |includeArtifactIds|只解析指定指定项目|api,service 逗号分割|
 |excludeBasePackage|排除包路径前缀|例如 com.github.wuyu191287278.client|
 |recursionAncestor|递归解析对象|true递归,false不递归. 默认false. 开启后会不断递归父类对象属性,可能会引起死循环|
+|datetimeFormat|日期格式|默认 yyyy-MM-dd'T'HH:mm:ssZ |
 
 ## javadoc 标签
 
