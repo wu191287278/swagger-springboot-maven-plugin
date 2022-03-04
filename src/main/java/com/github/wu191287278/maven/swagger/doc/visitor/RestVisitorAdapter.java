@@ -445,6 +445,11 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                 if (StringUtils.isNotBlank(value)) {
                                     variableName = value;
                                 }
+                                if (expression.isFieldAccessExpr() && "RequestHeader".equalsIgnoreCase(annotation.getNameAsString())) {
+                                    FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
+                                    SimpleName name = fieldAccessExpr.getName();
+                                    variableName = name.asString().toLowerCase().replace("_", "-");
+                                }
                             }
                         }
 

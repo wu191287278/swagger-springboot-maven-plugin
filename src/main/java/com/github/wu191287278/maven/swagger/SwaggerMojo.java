@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -13,7 +14,9 @@ import com.github.wu191287278.maven.swagger.doc.SwaggerDocs;
 import com.github.wu191287278.maven.swagger.doc.visitor.ResolveSwaggerType;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.models.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.*;
@@ -34,6 +37,9 @@ public class SwaggerMojo extends AbstractMojo {
 
     @Parameter(name = "description", defaultValue = "")
     private String description;
+
+    @Parameter(name = "descriptionFile", defaultValue = "README.md")
+    private String descriptionFile;
 
     @Parameter(name = "schema", defaultValue = "http")
     private String schema;
@@ -118,7 +124,7 @@ public class SwaggerMojo extends AbstractMojo {
         ResolveSwaggerType.TIME_FORMAT = getTimeFormat();
         ResolveSwaggerType.DATETIME_FORMAT = getDatetimeFormat();
         ResolveSwaggerType.RECURSION_ANCESTOR = getRecursionAncestor();
-        Map<String, Swagger> m = swaggerDocs.parse(parent.getBasedir().getAbsolutePath(), getBasePackage(),getExcludeBasePackage(), libs, c -> {
+        Map<String, Swagger> m = swaggerDocs.parse(parent.getBasedir().getAbsolutePath(), getBasePackage(), getExcludeBasePackage(), libs, c -> {
             getLog().info("Parsing " + c);
         });
 
@@ -182,7 +188,21 @@ public class SwaggerMojo extends AbstractMojo {
     }
 
     public String getDescription() {
-        return System.getProperty("description", description);
+        String description = System.getProperty("description", this.description);
+        if (StringUtils.isBlank(description)) {
+            String descriptionFile = System.getProperty("descriptionFile", this.descriptionFile);
+            if (StringUtils.isNotBlank(descriptionFile)) {
+                File file = new File(descriptionFile);
+                if (file.exists()) {
+                    try {
+                        description = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+                    } catch (IOException e) {
+
+                    }
+                }
+            }
+        }
+        return description;
     }
 
     public String getSchema() {

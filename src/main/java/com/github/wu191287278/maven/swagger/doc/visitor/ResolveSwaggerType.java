@@ -1,9 +1,11 @@
 package com.github.wu191287278.maven.swagger.doc.visitor;
 
+import java.beans.Transient;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -200,6 +202,10 @@ public class ResolveSwaggerType {
                             JsonProperty jsonProperty = (JsonProperty) ctField.getAnnotation(JsonProperty.class);
                             if (jsonProperty != null && StringUtils.isNotBlank(jsonProperty.value())) {
                                 name = jsonProperty.value();
+                            }
+                            Object jsonIgnore = ctField.getAnnotation(JsonIgnore.class);
+                            if (jsonIgnore != null) {
+                                continue;
                             }
                         } catch (Exception e) {
                             log.warn(e.getMessage(), e);
