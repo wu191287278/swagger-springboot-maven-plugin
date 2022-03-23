@@ -92,10 +92,56 @@
                     response['text'] = JSON.stringify(obj);
                 }
                 return response;
+            },
+            requestInterceptor: function (r) {
+                let headers = loadHeaders();
+                if (headers) {
+                    let items = headers.split("\n");
+                    for (let i = 0; i < items.length; i++) {
+                        let header = items[i].split(":");
+                        if (header.length === 2) {
+                            r.headers[header[0]] = header[1];
+                        }
+                    }
+                }
+                return r;
+            },
+            onComplete: function () {
+                let authorize = document.getElementsByClassName("btn authorize unlocked")[0];
+                authorize.addEventListener("click", () => {
+                    setTimeout(() => {
+                        let headers = loadHeaders();
+                        let div = '<div class="auth-container">\n' +
+                            '        <div>\n' +
+                            '            <div><h4><code>Headers</code></h4>\n' +
+                            '                <div class="wrapper">' +
+                            '                    <section class=""><textarea cols="5" rows="5" style="border: 1px solid #d9d9d9;border-radius 5px" id="headers"></textarea></section>\n' +
+                            '                </div>\n' +
+                            '            </div>\n' +
+                            '        </div>\n' +
+                            '        <div class="auth-btn-wrapper">\n' +
+                            '            <button type="button" class="btn modal-btn auth authorize button" onclick="setHeaders()">Confirm</button>\n' +
+                            '        </div>\n' +
+                            '</div>';
+                        let dialogUx = document.querySelector(".modal-ux-content");
+                        let dom = new DOMParser().parseFromString(div, "text/html").body.childNodes[0];
+                        dialogUx.appendChild(dom);
+                        document.getElementById("headers").value = headers;
+                    }, 300);
+                })
             }
         });
 
         window.ui = ui
+    }
+
+    function loadHeaders() {
+        return window.localStorage.getItem("headers");
+    }
+
+    function setHeaders() {
+        window.localStorage.setItem("headers", document.getElementById("headers").value);
+        alert("Success");
     }
 </script>
 </body>
