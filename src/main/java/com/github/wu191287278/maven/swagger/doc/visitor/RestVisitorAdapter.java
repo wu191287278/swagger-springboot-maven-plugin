@@ -380,6 +380,15 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                             param = new PathParameter()
                                     .property(paramProperty);
                             break;
+                        case "SignValidator":
+                            Model signModel = resolveSwaggerType.convertToModel(property);
+                            BodyParameter signBody = new BodyParameter().schema(new ModelImpl().type("object"));
+                            if (signModel != null) {
+                                signBody.schema(signModel);
+                            }
+                            param = signBody;
+                            request.getConsumes().add("application/json");
+                            break;
                         case "RequestBody":
                             Model model = resolveSwaggerType.convertToModel(property);
                             BodyParameter bodyParameter = new BodyParameter().schema(new ModelImpl().type("object"));
@@ -389,7 +398,6 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                             param = bodyParameter;
                             request.getConsumes().add("application/json");
                             break;
-
                         case "RequestPart":
                             param = new FormParameter()
                                     .property(paramProperty);
@@ -557,7 +565,7 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
         Property property = resolveSwaggerType.resolve(type);
         if (property.getName() != null) {
             request.setReturnType(new RefProperty("#/definitions/" + property.getName()));
-            if(request.getProduces().isEmpty()){
+            if (request.getProduces().isEmpty()) {
                 request.getProduces().add("application/json");
             }
         } else {
