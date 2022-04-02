@@ -1,19 +1,17 @@
 package com.github.wu191287278.maven.swagger;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import cn.hutool.core.util.ZipUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wu191287278.maven.swagger.doc.SwaggerDocs;
 import com.github.wu191287278.maven.swagger.doc.visitor.ResolveSwaggerType;
 import com.google.common.collect.ImmutableMap;
-import io.swagger.models.*;
+import io.swagger.models.Swagger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -165,6 +163,23 @@ public class SwaggerMojo extends AbstractMojo {
         } catch (IOException e) {
             getLog().error(e);
         }
+        File dist = new File(getOutputDirectory(), "dist.zip");
+        try (InputStream in = SwaggerMojo.class.getClassLoader().getResourceAsStream("META-INF/resources/swagger/dist.zip");
+             OutputStream out = new BufferedOutputStream(new FileOutputStream(dist))) {
+            if (in != null) {
+                IOUtils.copy(in, out);
+            }
+        } catch (IOException e) {
+            getLog().error(e);
+        }
+        try {
+            File distDir = new File(getOutputDirectory(), "dist");
+            distDir.mkdirs();
+            ZipUtil.unzip(dist, distDir);
+        } catch (Exception e) {
+            getLog().error(e);
+        }
+
     }
 
     private void write(Swagger swagger, File out) {
@@ -274,4 +289,5 @@ public class SwaggerMojo extends AbstractMojo {
         }
         return set;
     }
+
 }
