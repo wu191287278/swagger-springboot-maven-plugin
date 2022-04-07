@@ -555,7 +555,7 @@ public class ResolveSwaggerType {
     }
 
 
-    private Property resolveBaseType(String clazzName) {
+    public static Property resolveBaseType(String clazzName) {
         if ("int".equals(clazzName)
                 || "java.lang.Integer".equals(clazzName)
                 || "java.math.BigInteger".equals(clazzName)
@@ -589,7 +589,7 @@ public class ResolveSwaggerType {
             return new ByteArrayProperty();
         }
 
-        if ("java.lang.String".equals(clazzName) || "java.lang.CharSequence".equals(clazzName)) {
+        if ("string".equalsIgnoreCase(clazzName)||"java.lang.String".equalsIgnoreCase(clazzName) || "java.lang.CharSequence".equalsIgnoreCase(clazzName)) {
             return new StringProperty();
         }
 
@@ -604,7 +604,7 @@ public class ResolveSwaggerType {
             return new StringProperty("data-time").example(TIME_FORMAT);
         }
 
-        if ("java.util.Date".equals(clazzName) ||
+        if ("date".equals(clazzName) ||"java.util.Date".equals(clazzName) ||
                 "java.time.LocalDateTime".equals(clazzName) ||
                 "java.time.ZonedDateTime".equals(clazzName) ||
                 "java.joda.LocalDateTime".equals(clazzName) ||

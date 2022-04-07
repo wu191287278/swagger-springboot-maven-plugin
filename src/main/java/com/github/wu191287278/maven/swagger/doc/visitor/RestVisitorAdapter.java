@@ -1,5 +1,6 @@
 package com.github.wu191287278.maven.swagger.doc.visitor;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
@@ -563,6 +564,26 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
         }
 
         Property property = resolveSwaggerType.resolve(type);
+        String response = System.getProperty("response", "");
+        if (StringUtils.isNotBlank(response)) {
+            ObjectProperty objectProperty = new ObjectProperty();
+            try {
+                Map<String, String> map = objectMapper.readValue(response, Map.class);
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+                    Property resolveBaseType = ResolveSwaggerType.resolveBaseType(value);
+                    if (resolveBaseType != null) {
+                        objectProperty.property(key, resolveBaseType);
+                    } else {
+                        objectProperty.property(key, property);
+                    }
+                }
+                property = objectProperty;
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
         if (property.getName() != null) {
             request.setReturnType(new RefProperty("#/definitions/" + property.getName()));
             if (request.getProduces().isEmpty()) {
