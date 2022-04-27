@@ -1,6 +1,8 @@
 package com.github.wu191287278.maven.swagger;
 
 import java.io.*;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -11,10 +13,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wu191287278.maven.swagger.doc.SwaggerDocs;
 import com.github.wu191287278.maven.swagger.doc.visitor.ResolveSwaggerType;
 import com.google.common.collect.ImmutableMap;
+import io.swagger.models.Model;
 import io.swagger.models.Swagger;
+import io.swagger.models.properties.Property;
+import io.swagger.parser.SwaggerParser;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.*;
@@ -78,6 +84,9 @@ public class SwaggerMojo extends AbstractMojo {
     @Parameter(name = "skip", defaultValue = "false")
     private String skip;
 
+    @Parameter(name = "mergeModel", defaultValue = "")
+    private String mergeModel;
+
     @Override
     public void execute() {
         if (isSkip()) {
@@ -107,14 +116,26 @@ public class SwaggerMojo extends AbstractMojo {
             return;
         }
 
-        MavenProject parent = project;
-        while (parent.hasParent()) {
-            if (parent.isExecutionRoot()) {
+        MavenProject copyParent = project;
+        while (copyParent.hasParent()) {
+            if (copyParent.isExecutionRoot()) {
                 break;
             }
-            parent = parent.getParent();
+            copyParent = copyParent.getParent();
         }
-
+        try {
+            List<URL> urls = new ArrayList<>();
+            for (Artifact artifact : project.getArtifacts()) {
+                URL url = artifact.getFile().toURI().toURL();
+                urls.add(url);
+            }
+            ClassLoader prevClassLoader = Thread.currentThread().getContextClassLoader();
+            URL[] jarUrlArray = urls.toArray(new URL[]{});
+            URLClassLoader cl = URLClassLoader.newInstance(jarUrlArray, prevClassLoader);
+            Thread.currentThread().setContextClassLoader(cl);
+        } catch (Exception e) {
+            getLog().warn(e.getMessage());
+        }
 
         SwaggerDocs swaggerDocs = new SwaggerDocs(getTitle(), getDescription(), getVersion(), getBasePath(), getHost());
         swaggerDocs.setCamel(getCamel());
@@ -122,7 +143,7 @@ public class SwaggerMojo extends AbstractMojo {
         ResolveSwaggerType.TIME_FORMAT = getTimeFormat();
         ResolveSwaggerType.DATETIME_FORMAT = getDatetimeFormat();
         ResolveSwaggerType.RECURSION_ANCESTOR = getRecursionAncestor();
-        Map<String, Swagger> m = swaggerDocs.parse(parent.getBasedir().getAbsolutePath(), getBasePackage(), getExcludeBasePackage(), libs, c -> {
+        Map<String, Swagger> m = swaggerDocs.parse(copyParent.getBasedir().getAbsolutePath(), getBasePackage(), getExcludeBasePackage(), libs, c -> {
             getLog().info("Parsing " + c);
         });
 
@@ -143,8 +164,23 @@ public class SwaggerMojo extends AbstractMojo {
 
         for (Map.Entry<String, Swagger> entry : m.entrySet()) {
             String filename = entry.getKey() + ".json";
-            write(entry.getValue(), new File(output, filename));
+            Swagger swagger = entry.getValue();
+            mergeModel(swagger);
+            write(swagger, new File(output, filename));
             urls.add(ImmutableMap.of("name", entry.getKey(), "url", "./" + filename));
+        }
+        for (MavenProject collectedProject : copyParent.getCollectedProjects()) {
+            if (collectedProject.getName().equals(project.getName())) {
+                continue;
+            }
+            File target = new File(collectedProject.getBasedir(), "target/classes/swagger/" + copyParent.getName());
+            target.mkdirs();
+            for (Map.Entry<String, Swagger> entry : m.entrySet()) {
+                String filename = entry.getKey() + ".json";
+                Swagger swagger = entry.getValue();
+                write(swagger, new File(target, filename));
+                urls.add(ImmutableMap.of("name", entry.getKey(), "url", "./" + filename));
+            }
         }
         writeHtml(urls);
     }
@@ -269,6 +305,64 @@ public class SwaggerMojo extends AbstractMojo {
 
     public String getBasePackage() {
         return System.getProperty("basePackage", basePackage);
+    }
+
+    public void mergeModel(Swagger swagger) {
+        try {
+            String mergeModels = System.getProperty("modelPath", "");
+            if (StringUtils.isBlank(mergeModels)) {
+                return;
+            }
+            String[] split = mergeModels.split(",");
+            for (String modelPath : split) {
+                modelPath = modelPath.trim();
+                if (modelPath.startsWith("classpath:")) {
+                    modelPath = modelPath.replace("classpath:", "");
+                    try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(modelPath)) {
+                        if (in == null) {
+                            continue;
+                        }
+                        String swaggerFile = IOUtils.toString(in, StandardCharsets.UTF_8);
+                        Swagger modelSwagger = new SwaggerParser()
+                                .parse(swaggerFile);
+                        for (Map.Entry<String, Model> entry : swagger.getDefinitions().entrySet()) {
+                            String key = entry.getKey();
+                            Model replaceModel = entry.getValue();
+
+                            boolean isContinue = false;
+                            for (Map.Entry<String, Property> propertyEntry : replaceModel.getProperties().entrySet()) {
+                                if (StringUtils.isNotBlank(propertyEntry.getValue().getDescription())) {
+                                    isContinue = true;
+                                    break;
+                                }
+                            }
+                            if (isContinue) {
+                                continue;
+                            }
+                            if (modelSwagger.getDefinitions() == null) {
+                                continue;
+                            }
+
+                            Model model = modelSwagger.getDefinitions().get(key);
+                            if (model != null) {
+                                for (Map.Entry<String, Property> propertyEntry : model.getProperties().entrySet()) {
+                                    String description = propertyEntry.getValue().getDescription();
+                                    if (StringUtils.isNotBlank(description)) {
+                                        replaceModel = model;
+                                        break;
+                                    }
+                                }
+                            }
+                            swagger.model(entry.getKey(), replaceModel);
+                        }
+                    } catch (IOException e) {
+                        getLog().warn(e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            getLog().warn(e.getMessage());
+        }
     }
 
     public boolean isSkip() {
