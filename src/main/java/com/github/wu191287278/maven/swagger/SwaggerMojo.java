@@ -3,7 +3,6 @@ package com.github.wu191287278.maven.swagger;
 import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -325,35 +324,22 @@ public class SwaggerMojo extends AbstractMojo {
                         String swaggerFile = IOUtils.toString(in, StandardCharsets.UTF_8);
                         Swagger modelSwagger = new SwaggerParser()
                                 .parse(swaggerFile);
-                        for (Map.Entry<String, Model> entry : swagger.getDefinitions().entrySet()) {
-                            String key = entry.getKey();
-                            Model replaceModel = entry.getValue();
-
-                            boolean isContinue = false;
-                            for (Map.Entry<String, Property> propertyEntry : replaceModel.getProperties().entrySet()) {
-                                if (StringUtils.isNotBlank(propertyEntry.getValue().getDescription())) {
-                                    isContinue = true;
-                                    break;
-                                }
-                            }
-                            if (isContinue) {
-                                continue;
-                            }
-                            if (modelSwagger.getDefinitions() == null) {
-                                continue;
-                            }
-
-                            Model model = modelSwagger.getDefinitions().get(key);
+                        for (Map.Entry<String, Model> entry : modelSwagger.getDefinitions().entrySet()) {
+                            Model model = swagger.getDefinitions().get(entry.getKey());
                             if (model != null) {
-                                for (Map.Entry<String, Property> propertyEntry : model.getProperties().entrySet()) {
-                                    String description = propertyEntry.getValue().getDescription();
-                                    if (StringUtils.isNotBlank(description)) {
-                                        replaceModel = model;
-                                        break;
+                                boolean isBreak = false;
+                                if (model.getProperties() != null) {
+                                    for (Map.Entry<String, Property> propertyEntry : model.getProperties().entrySet()) {
+                                        if (StringUtils.isNotBlank(propertyEntry.getValue().getDescription())) {
+                                            isBreak = true;
+                                            break;
+                                        }
                                     }
                                 }
+                                if (!isBreak) {
+                                    swagger.model(entry.getKey(), entry.getValue());
+                                }
                             }
-                            swagger.model(entry.getKey(), replaceModel);
                         }
                     } catch (IOException e) {
                         getLog().warn(e.getMessage());
