@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import cn.hutool.core.util.ZipUtil;
+import cn.hutool.http.HttpUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wu191287278.maven.swagger.doc.SwaggerDocs;
@@ -178,7 +179,6 @@ public class SwaggerMojo extends AbstractMojo {
                 String filename = entry.getKey() + ".json";
                 Swagger swagger = entry.getValue();
                 write(swagger, new File(target, filename));
-                urls.add(ImmutableMap.of("name", entry.getKey(), "url", "./" + filename));
             }
         }
         writeHtml(urls);
@@ -343,6 +343,28 @@ public class SwaggerMojo extends AbstractMojo {
                         }
                     } catch (IOException e) {
                         getLog().warn(e.getMessage());
+                    }
+                }
+                if (modelPath.startsWith("http://") || modelPath.startsWith("https://")) {
+                    String swaggerFile = HttpUtil.get(modelPath);
+                    Swagger modelSwagger = new SwaggerParser()
+                            .parse(swaggerFile);
+                    for (Map.Entry<String, Model> entry : modelSwagger.getDefinitions().entrySet()) {
+                        Model model = swagger.getDefinitions().get(entry.getKey());
+                        if (model != null) {
+                            boolean isBreak = false;
+                            if (model.getProperties() != null) {
+                                for (Map.Entry<String, Property> propertyEntry : model.getProperties().entrySet()) {
+                                    if (StringUtils.isNotBlank(propertyEntry.getValue().getDescription())) {
+                                        isBreak = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!isBreak) {
+                                swagger.model(entry.getKey(), entry.getValue());
+                            }
+                        }
                     }
                 }
             }
