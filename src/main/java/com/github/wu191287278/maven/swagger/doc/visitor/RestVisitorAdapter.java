@@ -390,6 +390,9 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                             param = signBody;
                             request.getConsumes().add("application/json");
                             break;
+                        case "Principal":
+                            param = null;
+                            break;
                         case "RequestBody":
                             Model model = resolveSwaggerType.convertToModel(property);
                             BodyParameter bodyParameter = new BodyParameter().schema(new ModelImpl().type("object"));
@@ -443,6 +446,9 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                             }
                     }
 
+                    if (param == null) {
+                        break;
+                    }
 
                     if (param instanceof PathParameter || param instanceof QueryParameter || param instanceof HeaderParameter || param instanceof CookieParameter) {
                         if (annotation.isSingleMemberAnnotationExpr()) {
