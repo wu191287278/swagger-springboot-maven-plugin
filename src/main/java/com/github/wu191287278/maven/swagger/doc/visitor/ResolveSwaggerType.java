@@ -2,6 +2,7 @@ package com.github.wu191287278.maven.swagger.doc.visitor;
 
 import java.beans.Transient;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -40,7 +41,7 @@ import io.swagger.models.ModelImpl;
 import io.swagger.models.RefModel;
 import io.swagger.models.properties.*;
 import javassist.CtField;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,6 +190,93 @@ public class ResolveSwaggerType {
                     if (fieldIsRequired(wrappedNode)) {
                         property.setRequired(true);
                     }
+                    if (property instanceof StringProperty) {
+                        Optional<AnnotationExpr> url = wrappedNode.getAnnotationByName("URL");
+                        if (url.isPresent()) {
+                            StringProperty stringProperty = (StringProperty) property;
+                            stringProperty.example("https://swagger.io");
+                        }
+                        Optional<AnnotationExpr> email = wrappedNode.getAnnotationByName("Email");
+                        if (email.isPresent()) {
+                            StringProperty stringProperty = (StringProperty) property;
+                            stringProperty.example("api_docs@swagger.io");
+                        }
+                        Optional<AnnotationExpr> pattern = wrappedNode.getAnnotationByClass(Pattern.class);
+                        if (pattern.isPresent()) {
+                            AnnotationExpr annotationExpr = pattern.get().asAnnotationExpr();
+                            if (annotationExpr instanceof NormalAnnotationExpr) {
+                                NormalAnnotationExpr normalAnnotationExpr = annotationExpr.asNormalAnnotationExpr();
+                                NodeList<MemberValuePair> pairs = normalAnnotationExpr.getPairs();
+                                for (MemberValuePair pair : pairs) {
+                                    String pairName = pair.getName().asString();
+                                    Expression pairExpression = pair.getValue();
+                                    if ("pattern".equals(pairName)) {
+                                        ((StringProperty) property).pattern(pairExpression.asStringLiteralExpr().getValue());
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+
+                    Optional<AnnotationExpr> size = wrappedNode.getAnnotationByClass(Size.class);
+                    if (size.isPresent()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            AnnotationExpr annotationExpr = size.get().asAnnotationExpr();
+                            if (annotationExpr instanceof NormalAnnotationExpr) {
+                                NormalAnnotationExpr normalAnnotationExpr = annotationExpr.asNormalAnnotationExpr();
+                                NodeList<MemberValuePair> pairs = normalAnnotationExpr.getPairs();
+                                for (MemberValuePair pair : pairs) {
+                                    String pairName = pair.getName().asString();
+                                    Expression pairExpression = pair.getValue();
+                                    if ("min".equals(pairName)) {
+                                        numericProperty.minimum(new BigDecimal(pairExpression.asLongLiteralExpr().getValue()));
+                                    }
+                                    if ("max".equals(pairName)) {
+                                        numericProperty.minimum(new BigDecimal(pairExpression.asLongLiteralExpr().getValue()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Optional<AnnotationExpr> decimalMin = wrappedNode.getAnnotationByClass(DecimalMin.class);
+                    if (decimalMin.isPresent()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            AnnotationExpr annotationExpr = decimalMin.get().asAnnotationExpr();
+                            if (annotationExpr instanceof NormalAnnotationExpr) {
+                                NormalAnnotationExpr normalAnnotationExpr = annotationExpr.asNormalAnnotationExpr();
+                                NodeList<MemberValuePair> pairs = normalAnnotationExpr.getPairs();
+                                for (MemberValuePair pair : pairs) {
+                                    String pairName = pair.getName().asString();
+                                    Expression pairExpression = pair.getValue();
+                                    if ("min".equals(pairName)) {
+                                        numericProperty.minimum(new BigDecimal(pairExpression.asLongLiteralExpr().getValue()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Optional<AnnotationExpr> decimalMax = wrappedNode.getAnnotationByClass(DecimalMax.class);
+                    if (decimalMax.isPresent()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            AnnotationExpr annotationExpr = decimalMax.get().asAnnotationExpr();
+                            if (annotationExpr instanceof NormalAnnotationExpr) {
+                                NormalAnnotationExpr normalAnnotationExpr = annotationExpr.asNormalAnnotationExpr();
+                                NodeList<MemberValuePair> pairs = normalAnnotationExpr.getPairs();
+                                for (MemberValuePair pair : pairs) {
+                                    String pairName = pair.getName().asString();
+                                    Expression pairExpression = pair.getValue();
+                                    if ("max".equals(pairName)) {
+                                        numericProperty.minimum(new BigDecimal(pairExpression.asLongLiteralExpr().getValue()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
 
                 } else if (!declaredField.isStatic() && (declaredField instanceof JavassistFieldDeclaration || declaredField instanceof ReflectionFieldDeclaration)) {
                     Property property = resolve(resolvedType);
@@ -203,9 +291,45 @@ public class ResolveSwaggerType {
                             if (jsonProperty != null && StringUtils.isNotBlank(jsonProperty.value())) {
                                 name = jsonProperty.value();
                             }
+
                             Object jsonIgnore = ctField.getAnnotation(JsonIgnore.class);
                             if (jsonIgnore != null) {
                                 continue;
+                            }
+                            if (property instanceof StringProperty) {
+                                boolean url = ctField.hasAnnotation("URL");
+                                if (url) {
+                                    StringProperty stringProperty = (StringProperty) property;
+                                    stringProperty.example("https://swagger.io");
+                                }
+                                boolean email = ctField.hasAnnotation("Email");
+                                if (email) {
+                                    StringProperty stringProperty = (StringProperty) property;
+                                    stringProperty.example("api_docs@swagger.io");
+                                }
+                                Pattern pattern = (Pattern) ctField.getAnnotation(Pattern.class);
+                                if (pattern != null) {
+                                    ((StringProperty) property).pattern(pattern.regexp());
+                                }
+
+                            }
+
+
+                            if (property instanceof AbstractNumericProperty) {
+                                AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                Size size = (Size) ctField.getAnnotation(Size.class);
+                                if (size != null) {
+                                    numericProperty.minimum(new BigDecimal(size.min()));
+                                    numericProperty.maximum(new BigDecimal(size.max()));
+                                }
+                                DecimalMax decimalMax = (DecimalMax) ctField.getAnnotation(DecimalMax.class);
+                                if (decimalMax != null) {
+                                    numericProperty.maximum(new BigDecimal(decimalMax.value()));
+                                }
+                                DecimalMin decimalMin = (DecimalMin) ctField.getAnnotation(DecimalMin.class);
+                                if (decimalMax != null) {
+                                    numericProperty.minimum(new BigDecimal(decimalMin.value()));
+                                }
                             }
                         } catch (Exception e) {
                             log.warn(e.getMessage(), e);
@@ -384,6 +508,7 @@ public class ResolveSwaggerType {
     private boolean fieldIsRequired(FieldDeclaration wrappedNode) {
         Optional<AnnotationExpr> jsonProperty = wrappedNode.getAnnotationByClass(JsonProperty.class);
         Optional<AnnotationExpr> notNull = wrappedNode.getAnnotationByClass(NotNull.class);
+        Optional<AnnotationExpr> notEmpty = wrappedNode.getAnnotationByClass(NotEmpty.class);
         boolean required = false;
         if (jsonProperty.isPresent()) {
             AnnotationExpr annotationExpr = jsonProperty.get().asAnnotationExpr();
@@ -399,7 +524,7 @@ public class ResolveSwaggerType {
                 }
             }
         }
-        return required || notNull.isPresent();
+        return required || notNull.isPresent() || notEmpty.isPresent();
     }
 
 
@@ -562,15 +687,23 @@ public class ResolveSwaggerType {
                 || "java.lang.Short".equals(clazzName)
                 || "short".equals(clazzName)
         ) {
-            return new IntegerProperty();
+            return new IntegerProperty()
+                    .example(1);
         }
 
         if ("long".equals(clazzName) || "java.lang.Long".equals(clazzName)) {
-            return new LongProperty();
+            return new LongProperty()
+                    .example(1L);
         }
 
-        if ("double".equals(clazzName) || "java.lang.Double".equals(clazzName) || "java.math.BigDecimal".equals(clazzName)) {
-            return new DoubleProperty();
+        if ("double".equals(clazzName) || "java.lang.Double".equals(clazzName)) {
+            return new DoubleProperty()
+                    .example(1.1);
+        }
+
+        if ("java.math.BigDecimal".equals(clazzName)) {
+            return new DecimalProperty()
+                    .example("1.1");
         }
 
         if ("float".equals(clazzName) || "java.lang.Float".equals(clazzName)) {
@@ -582,14 +715,16 @@ public class ResolveSwaggerType {
         }
 
         if ("byte".equals(clazzName) || "java.lang.Byte".equals(clazzName)) {
-            return new StringProperty("byte");
+            AbstractNumericProperty minimum = new IntegerProperty();
+            minimum.setExample("1");
+            return minimum;
         }
 
         if ("byte[]".equals(clazzName) || "java.lang.Byte[]".equals(clazzName)) {
             return new ByteArrayProperty();
         }
 
-        if ("string".equalsIgnoreCase(clazzName)||"java.lang.String".equalsIgnoreCase(clazzName) || "java.lang.CharSequence".equalsIgnoreCase(clazzName)) {
+        if ("string".equalsIgnoreCase(clazzName) || "java.lang.String".equalsIgnoreCase(clazzName) || "java.lang.CharSequence".equalsIgnoreCase(clazzName)) {
             return new StringProperty();
         }
 
@@ -604,7 +739,7 @@ public class ResolveSwaggerType {
             return new StringProperty("data-time").example(TIME_FORMAT);
         }
 
-        if ("date".equals(clazzName) ||"java.util.Date".equals(clazzName) ||
+        if ("date".equals(clazzName) || "java.util.Date".equals(clazzName) ||
                 "java.time.LocalDateTime".equals(clazzName) ||
                 "java.time.ZonedDateTime".equals(clazzName) ||
                 "java.joda.LocalDateTime".equals(clazzName) ||
@@ -629,7 +764,8 @@ public class ResolveSwaggerType {
                 || "com.google.gson.JsonObject".equals(clazzName)
                 || "com.fasterxml.jackson.databind.node.ObjectNode".equals(clazzName)
         ) {
-            return new MapProperty().additionalProperties(new ObjectProperty());
+            return new MapProperty()
+                    .additionalProperties(new ObjectProperty());
         }
 
         if ("com.alibaba.fastjson.JSONArray".equals(clazzName)

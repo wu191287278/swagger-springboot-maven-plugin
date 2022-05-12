@@ -1,5 +1,6 @@
 package com.github.wu191287278.maven.swagger.doc.visitor;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,10 +20,8 @@ import com.github.javaparser.javadoc.description.JavadocDescription;
 import com.github.wu191287278.maven.swagger.doc.domain.Request;
 import io.swagger.models.*;
 import io.swagger.models.parameters.*;
-import io.swagger.models.properties.ObjectProperty;
-import io.swagger.models.properties.Property;
-import io.swagger.models.properties.RefProperty;
-import io.swagger.models.properties.StringProperty;
+import io.swagger.models.properties.*;
+import javax.validation.constraints.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -294,6 +293,180 @@ public class JavaxRsVisitorAdapter extends VoidVisitorAdapter<Swagger> {
 
                 if ("NotNull".equals(annotationName)) {
                     property.setRequired(true);
+                }
+
+                if ("NotEmpty".equals(annotationName)) {
+                    property.setAllowEmptyValue(false);
+                }
+
+                if ("NotBlank".equals(annotationName)) {
+                    property.setAllowEmptyValue(false);
+                    property.setRequired(true);
+                }
+
+                if ("Pattern".equalsIgnoreCase(annotationName)) {
+                    if (annotation.isArrayInitializerExpr()) {
+                        NodeList<Expression> values = annotation.asArrayInitializerExpr().getValues();
+                        for (Expression value : values) {
+                            if (value.isStringLiteralExpr()) {
+                                String name = value.asNameExpr().getName().asString();
+                                if (name.equalsIgnoreCase("regexp")) {
+                                    request.getProduces().add(value.asStringLiteralExpr().asString());
+                                }
+                            }
+                        }
+                    }
+                    if (annotation.isStringLiteralExpr()) {
+                        if (property instanceof StringProperty) {
+                            StringProperty stringProperty = (StringProperty) property;
+                            String pattern = annotation.asStringLiteralExpr().asString();
+                            stringProperty.pattern(pattern);
+                        }
+                    }
+
+                }
+
+                if ("Min".equalsIgnoreCase(annotationName)) {
+                    if (annotation.isLongLiteralExpr()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            long l = annotation.asLongLiteralExpr().asLong();
+                            numericProperty.minimum(BigDecimal.valueOf(l));
+                        }
+                    }
+                    if (annotation.isArrayInitializerExpr()) {
+                        NodeList<Expression> values = annotation.asArrayInitializerExpr().getValues();
+                        for (Expression value : values) {
+                            if (value.isLongLiteralExpr()) {
+                                String name = value.asNameExpr().getName().asString();
+                                if (name.equalsIgnoreCase("value") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.minimum(BigDecimal.valueOf(l));
+                                }
+                            }
+                        }
+                    }
+                }
+                if ("Max".equalsIgnoreCase(annotationName)) {
+                    if (annotation.isLongLiteralExpr()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            long l = annotation.asLongLiteralExpr().asLong();
+                            numericProperty.maximum(BigDecimal.valueOf(l));
+                        }
+                    }
+                    if (annotation.isArrayInitializerExpr()) {
+                        NodeList<Expression> values = annotation.asArrayInitializerExpr().getValues();
+                        for (Expression value : values) {
+                            if (value.isLongLiteralExpr()) {
+                                String name = value.asNameExpr().getName().asString();
+                                if (name.equalsIgnoreCase("value") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.maximum(BigDecimal.valueOf(l));
+                                }
+                            }
+                        }
+                    }
+                }
+                if ("Range".equalsIgnoreCase(annotationName)) {
+                    if (annotation.isArrayInitializerExpr()) {
+                        NodeList<Expression> values = annotation.asArrayInitializerExpr().getValues();
+                        for (Expression value : values) {
+                            if (value.isLongLiteralExpr()) {
+                                String name = value.asNameExpr().getName().asString();
+                                if (name.equalsIgnoreCase("min") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.minimum(BigDecimal.valueOf(l));
+                                }
+                                if (name.equalsIgnoreCase("max") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.maximum(BigDecimal.valueOf(l));
+                                }
+                            }
+                        }
+                    }
+                }
+                if ("DecimalMin".equalsIgnoreCase(annotationName)) {
+                    if (annotation.isLongLiteralExpr()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            long l = annotation.asLongLiteralExpr().asLong();
+                            numericProperty.maximum(BigDecimal.valueOf(l));
+                        }
+                    }
+                    if (annotation.isArrayInitializerExpr()) {
+                        NodeList<Expression> values = annotation.asArrayInitializerExpr().getValues();
+                        for (Expression value : values) {
+                            if (value.isLongLiteralExpr()) {
+                                String name = value.asNameExpr().getName().asString();
+                                if (name.equalsIgnoreCase("value") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.maximum(BigDecimal.valueOf(l));
+                                }
+                            }
+                        }
+                    }
+                }
+                if ("DecimalMax".equalsIgnoreCase(annotationName)) {
+                    if (annotation.isStringLiteralExpr()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            String l = annotation.asStringLiteralExpr().asString();
+                            numericProperty.maximum(new BigDecimal(l));
+                        }
+                    }
+                    if (annotation.isArrayInitializerExpr()) {
+                        NodeList<Expression> values = annotation.asArrayInitializerExpr().getValues();
+                        for (Expression value : values) {
+                            if (value.isStringLiteralExpr()) {
+                                String name = value.asNameExpr().getName().asString();
+                                if (name.equalsIgnoreCase("value") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.maximum(BigDecimal.valueOf(l));
+                                }
+                            }
+                        }
+                    }
+                }
+                if ("Size".equalsIgnoreCase(annotationName)) {
+                    if (annotation.isLongLiteralExpr()) {
+                        if (property instanceof AbstractNumericProperty) {
+                            AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                            String l = annotation.asStringLiteralExpr().asString();
+                            numericProperty.maximum(new BigDecimal(l));
+                        }
+                    }
+                    if (annotation.isArrayInitializerExpr()) {
+                        NodeList<Expression> values = annotation.asArrayInitializerExpr().getValues();
+                        for (Expression value : values) {
+                            if (value.isLongLiteralExpr()) {
+                                String name = value.asNameExpr().getName().asString();
+                                if (name.equalsIgnoreCase("min") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.minimum(BigDecimal.valueOf(l));
+                                }
+                                if (name.equalsIgnoreCase("max") && property instanceof AbstractNumericProperty) {
+                                    AbstractNumericProperty numericProperty = (AbstractNumericProperty) property;
+                                    long l = annotation.asLongLiteralExpr().asLong();
+                                    numericProperty.maximum(BigDecimal.valueOf(l));
+                                }
+                            }
+                        }
+                    }
+                }
+                if ("Email".equalsIgnoreCase(annotationName)) {
+                    property.setExample("api_docs@swagger.io");
+                }
+
+                if ("URL".equalsIgnoreCase(annotationName)) {
+                    property.setExample("https://swagger.io");
                 }
 
             }
