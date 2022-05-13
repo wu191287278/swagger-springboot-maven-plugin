@@ -91,19 +91,20 @@ http://你的地址/swagger-ui.html
 
 ## 变量说明
 
-|变量|说明|备注|
-|---|---|---|
-|host|对应swagger host|默认 localhost|
-|basePath|对应swagger basePath|默认 /|
-|title|对应swagger title|默认 Api Documentation|
-|version|对应swagger version|默认 1.0.0|
-|description|对应swagger description|默认 无|
-|outputDirectory|输出目录|默认classes/static文件夹|
-|camel|驼峰模式|true驼峰模式,false 下划线模式|
-|includeArtifactIds|只解析指定指定项目|api,service 逗号分割|
-|excludeBasePackage|排除包路径前缀|例如 com.github.wuyu191287278.client|
-|recursionAncestor|递归解析对象|true递归,false不递归. 默认false. 开启后会不断递归父类对象属性,可能会引起死循环|
-|datetimeFormat|日期格式|默认 yyyy-MM-dd'T'HH:mm:ssZ |
+| 变量                 | 说明                  |备注|
+|--------------------|---------------------|---|
+| host               | 对应swagger host      |默认 localhost|
+| basePath           | 对应swagger basePath  |默认 /|
+| title              | 对应swagger title     |默认 Api Documentation|
+| version            | 对应swagger version   |默认 1.0.0|
+| description        | 对应swagger description |默认 无|
+| outputDirectory    | 输出目录                |默认classes/static文件夹|
+| camel              | 驼峰模式                |true驼峰模式,false 下划线模式|
+| includeArtifactIds | 只解析指定指定项目           |api,service 逗号分割|
+| excludeBasePackage | 排除包路径前缀             |例如 com.github.wuyu191287278.client|
+| recursionAncestor  | 递归解析对象              |true递归,false不递归. 默认false. 开启后会不断递归父类对象属性,可能会引起死循环|
+| datetimeFormat     | 日期格式                |默认 yyyy-MM-dd'T'HH:mm:ssZ |
+| modelPath          | 外部的swaggerModel进行合并 | |
 
 ## javadoc 标签
 
