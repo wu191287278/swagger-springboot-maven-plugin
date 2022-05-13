@@ -509,6 +509,7 @@ public class ResolveSwaggerType {
         Optional<AnnotationExpr> jsonProperty = wrappedNode.getAnnotationByClass(JsonProperty.class);
         Optional<AnnotationExpr> notNull = wrappedNode.getAnnotationByClass(NotNull.class);
         Optional<AnnotationExpr> notEmpty = wrappedNode.getAnnotationByClass(NotEmpty.class);
+        Optional<AnnotationExpr> notBlank = wrappedNode.getAnnotationByClass(NotBlank.class);
         boolean required = false;
         if (jsonProperty.isPresent()) {
             AnnotationExpr annotationExpr = jsonProperty.get().asAnnotationExpr();
@@ -524,7 +525,7 @@ public class ResolveSwaggerType {
                 }
             }
         }
-        return required || notNull.isPresent() || notEmpty.isPresent();
+        return required || notNull.isPresent() || notEmpty.isPresent() || notBlank.isPresent();
     }
 
 
