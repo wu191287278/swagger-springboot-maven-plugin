@@ -19,6 +19,7 @@ import com.github.javaparser.javadoc.Javadoc;
 import com.github.javaparser.javadoc.JavadocBlockTag;
 import com.github.javaparser.javadoc.description.JavadocDescription;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
+import com.github.wu191287278.maven.swagger.doc.SwaggerDocs;
 import com.github.wu191287278.maven.swagger.doc.domain.Request;
 import com.github.wu191287278.maven.swagger.doc.utils.CamelUtils;
 import com.google.common.collect.ImmutableMap;
@@ -349,6 +350,21 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                 try {
                     ObjectProperty objectProperty = (ObjectProperty) property;
                     if (objectProperty.getProperties() != null && objectProperty.getProperties().size() > 0) {
+                        Map<String, Model> modelMap = SwaggerDocs.getModelMap();
+                        Model mode = modelMap.get(typeName);
+                        if (mode != null) {
+                            boolean isReplace = true;
+                            for (Map.Entry<String, Property> entry : objectProperty.getProperties().entrySet()) {
+                                if (StringUtils.isNotBlank(entry.getValue().getDescription())) {
+                                    isReplace = false;
+                                }
+                            }
+                            if (isReplace) {
+                                objectProperty = new ObjectProperty(mode.getProperties())
+                                        .description(mode.getDescription());
+                                property = objectProperty;
+                            }
+                        }
                         for (Map.Entry<String, Property> entry : objectProperty.getProperties().entrySet()) {
                             Property value = entry.getValue();
                             QueryParameter queryParameter = new QueryParameter()
@@ -363,6 +379,8 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                 ArrayProperty arrayProperty = (ArrayProperty) value;
                                 queryParameter.items(arrayProperty.getItems());
                                 queryParameter.setUniqueItems(arrayProperty.getUniqueItems());
+                                queryParameter.description(arrayProperty.getDescription());
+                                queryParameter.allowEmptyValue(arrayProperty.getAllowEmptyValue());
                             }
                             request.getParameters().add(queryParameter);
                         }
@@ -420,6 +438,21 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                 if (property instanceof ObjectProperty) {
                                     ObjectProperty objectProperty = (ObjectProperty) property;
                                     if (objectProperty.getProperties() != null && objectProperty.getProperties().size() > 0) {
+                                        Map<String, Model> modelMap = SwaggerDocs.getModelMap();
+                                        Model mode = modelMap.get(typeName);
+                                        if (mode != null) {
+                                            boolean isReplace = true;
+                                            for (Map.Entry<String, Property> entry : objectProperty.getProperties().entrySet()) {
+                                                if (StringUtils.isNotBlank(entry.getValue().getDescription())) {
+                                                    isReplace = false;
+                                                }
+                                            }
+                                            if (isReplace) {
+                                                objectProperty = new ObjectProperty(mode.getProperties())
+                                                        .description(mode.getDescription());
+                                                property = objectProperty;
+                                            }
+                                        }
                                         for (Map.Entry<String, Property> entry : objectProperty.getProperties().entrySet()) {
                                             Property value = entry.getValue();
                                             QueryParameter queryParameter = new QueryParameter()
@@ -434,6 +467,8 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
                                                 ArrayProperty arrayProperty = (ArrayProperty) value;
                                                 queryParameter.items(arrayProperty.getItems());
                                                 queryParameter.setUniqueItems(arrayProperty.getUniqueItems());
+                                                queryParameter.description(arrayProperty.getDescription());
+                                                queryParameter.allowEmptyValue(arrayProperty.getAllowEmptyValue());
                                             }
                                             request.getParameters().add(queryParameter);
                                         }

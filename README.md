@@ -75,8 +75,7 @@ mvn clean swagger-springboot:generate package
 ## 命令行方式
 
 ```
-mvn com.github.wu191287278:swagger-springboot-maven-plugin:2.1.0:generate \
-    -Dresponse="{\"code\":\"int\",\"success\":\"boolean\",\"message\":\"string\",\"result\":\"object\"}" \
+mvn com.github.wu191287278:swagger-springboot-maven-plugin:2.1.2:generate \
     -Dhost=localhost\
     -DbasePath=/ \
     -Dtitle=test \

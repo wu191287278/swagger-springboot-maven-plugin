@@ -683,27 +683,28 @@ public class ResolveSwaggerType {
     public static Property resolveBaseType(String clazzName) {
         if ("int".equals(clazzName)
                 || "java.lang.Integer".equals(clazzName)
-                || "java.math.BigInteger".equals(clazzName)
                 || "java.lang.Short".equals(clazzName)
                 || "short".equals(clazzName)
         ) {
-            return new IntegerProperty()
-                    .example(1);
+            return new IntegerProperty();
         }
 
         if ("long".equals(clazzName) || "java.lang.Long".equals(clazzName)) {
-            return new LongProperty()
-                    .example(1L);
+            return new LongProperty();
         }
 
         if ("double".equals(clazzName) || "java.lang.Double".equals(clazzName)) {
-            return new DoubleProperty()
-                    .example(1.1);
+            return new DoubleProperty();
+        }
+
+        if ("java.math.BigInteger".equals(clazzName)) {
+            return new StringProperty()
+                    .example("100");
         }
 
         if ("java.math.BigDecimal".equals(clazzName)) {
-            return new DecimalProperty()
-                    .example("1.1");
+            return new StringProperty()
+                    .example("0.88");
         }
 
         if ("float".equals(clazzName) || "java.lang.Float".equals(clazzName)) {
@@ -715,9 +716,7 @@ public class ResolveSwaggerType {
         }
 
         if ("byte".equals(clazzName) || "java.lang.Byte".equals(clazzName)) {
-            AbstractNumericProperty minimum = new IntegerProperty();
-            minimum.setExample("1");
-            return minimum;
+            return new IntegerProperty();
         }
 
         if ("byte[]".equals(clazzName) || "java.lang.Byte[]".equals(clazzName)) {

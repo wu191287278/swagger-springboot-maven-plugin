@@ -5,6 +5,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.http.HttpUtil;
@@ -133,6 +134,7 @@ public class SwaggerMojo extends AbstractMojo {
             URL[] jarUrlArray = urls.toArray(new URL[]{});
             URLClassLoader cl = URLClassLoader.newInstance(jarUrlArray, prevClassLoader);
             Thread.currentThread().setContextClassLoader(cl);
+            SwaggerDocs.CLASSLOADER = cl;
         } catch (Exception e) {
             getLog().warn(e.getMessage());
         }
@@ -305,6 +307,7 @@ public class SwaggerMojo extends AbstractMojo {
     public String getBasePackage() {
         return System.getProperty("basePackage", basePackage);
     }
+
 
     public void mergeModel(Swagger swagger) {
         try {

@@ -2,12 +2,15 @@ package com.github.wu191287278.maven.swagger.doc;
 
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import cn.hutool.http.HttpUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ParseResult;
@@ -25,7 +28,9 @@ import com.github.wu191287278.maven.swagger.doc.visitor.RestVisitorAdapter;
 import io.swagger.models.*;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.In;
+import io.swagger.parser.SwaggerParser;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -248,6 +253,45 @@ public class SwaggerDocs {
     public void setCamel(Boolean camel) {
         this.camel = camel;
     }
+
+    private static final Map<String, Model> MODEL_MAP = new ConcurrentHashMap<>();
+
+    public static Map<String, Model> getModelMap() {
+        try {
+            String mergeModels = System.getProperty("modelPath", "");
+            if (StringUtils.isBlank(mergeModels) || !MODEL_MAP.isEmpty()) {
+                return MODEL_MAP;
+            }
+            String[] split = mergeModels.split(",");
+            for (String modelPath : split) {
+                modelPath = modelPath.trim();
+                if (modelPath.startsWith("classpath:")) {
+                    modelPath = modelPath.replace("classpath:", "");
+                    try (InputStream in = CLASSLOADER.getResourceAsStream(modelPath)) {
+                        if (in == null) {
+                            continue;
+                        }
+                        String swaggerFile = IOUtils.toString(in, StandardCharsets.UTF_8);
+                        Swagger modelSwagger = new SwaggerParser()
+                                .parse(swaggerFile);
+                        MODEL_MAP.putAll(modelSwagger.getDefinitions());
+                    } catch (IOException e) {
+                    }
+                }
+                if (modelPath.startsWith("http://") || modelPath.startsWith("https://")) {
+                    String swaggerFile = HttpUtil.get(modelPath);
+                    Swagger modelSwagger = new SwaggerParser()
+                            .parse(swaggerFile);
+                    MODEL_MAP.putAll(modelSwagger.getDefinitions());
+                }
+            }
+        } catch (Exception e) {
+        }
+        return MODEL_MAP;
+    }
+
+    public static ClassLoader CLASSLOADER = SwaggerDocs.class.getClassLoader();
+
 }
 
 
