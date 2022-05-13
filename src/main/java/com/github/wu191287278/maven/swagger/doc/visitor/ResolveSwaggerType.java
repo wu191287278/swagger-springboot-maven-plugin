@@ -296,6 +296,11 @@ public class ResolveSwaggerType {
                             if (jsonIgnore != null) {
                                 continue;
                             }
+
+                            if (ctField.getAnnotation(NotBlank.class) != null || ctField.getAnnotation(NotEmpty.class) != null || ctField.getAnnotation(NotBlank.class) != null) {
+                                property.setRequired(true);
+                            }
+
                             if (property instanceof StringProperty) {
                                 boolean url = ctField.hasAnnotation("URL");
                                 if (url) {
