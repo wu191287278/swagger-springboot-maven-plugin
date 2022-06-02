@@ -166,13 +166,13 @@ public class SwaggerMojo extends AbstractMojo {
 //        }
 
         for (Map.Entry<String, Swagger> entry : m.entrySet()) {
+            if (CollUtil.isNotEmpty(includeArtifactIdsSet) && !includeArtifactIdsSet.contains(entry.getKey())) {
+                continue;
+            }
             String filename = entry.getKey() + ".json";
             Swagger swagger = entry.getValue();
             mergeModel(swagger);
             write(swagger, new File(output, filename));
-            if (CollUtil.isNotEmpty(includeArtifactIdsSet) && !includeArtifactIdsSet.contains(entry.getKey())) {
-                continue;
-            }
             urls.add(ImmutableMap.of("name", entry.getKey(), "url", "./" + filename));
         }
         for (MavenProject collectedProject : copyParent.getCollectedProjects()) {
