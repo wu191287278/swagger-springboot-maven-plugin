@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.http.HttpUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -154,21 +155,24 @@ public class SwaggerMojo extends AbstractMojo {
 
         List<Map<String, String>> urls = new ArrayList<>();
 
-        if (!includeArtifactIdsSet.isEmpty()) {
-            Map<String, Swagger> newM = new HashMap<>();
-            for (Map.Entry<String, Swagger> entry : m.entrySet()) {
-                if (includeArtifactIdsSet.contains(entry.getKey())) {
-                    newM.put(entry.getKey(), entry.getValue());
-                }
-            }
-            m = newM;
-        }
+//        if (!includeArtifactIdsSet.isEmpty()) {
+//            Map<String, Swagger> newM = new HashMap<>();
+//            for (Map.Entry<String, Swagger> entry : m.entrySet()) {
+//                if (includeArtifactIdsSet.contains(entry.getKey())) {
+//                    newM.put(entry.getKey(), entry.getValue());
+//                }
+//            }
+//            m = newM;
+//        }
 
         for (Map.Entry<String, Swagger> entry : m.entrySet()) {
             String filename = entry.getKey() + ".json";
             Swagger swagger = entry.getValue();
             mergeModel(swagger);
             write(swagger, new File(output, filename));
+            if (CollUtil.isNotEmpty(includeArtifactIdsSet) && !includeArtifactIdsSet.contains(entry.getKey())) {
+                continue;
+            }
             urls.add(ImmutableMap.of("name", entry.getKey(), "url", "./" + filename));
         }
         for (MavenProject collectedProject : copyParent.getCollectedProjects()) {
