@@ -6,11 +6,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ParseResult;
@@ -24,6 +26,7 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeS
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.wu191287278.maven.swagger.doc.visitor.JavaxRsVisitorAdapter;
+import com.github.wu191287278.maven.swagger.doc.visitor.ResolveSwaggerType;
 import com.github.wu191287278.maven.swagger.doc.visitor.RestVisitorAdapter;
 import io.swagger.models.*;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
@@ -123,7 +126,6 @@ public class SwaggerDocs {
                 log.warn(e.getMessage());
             }
 
-
             final RestVisitorAdapter restVisitorAdapter = new RestVisitorAdapter(consumer)
                     .setCamel(camel)
                     .setBasePackage(basePackage);
@@ -146,7 +148,6 @@ public class SwaggerDocs {
 
             SourceRoot sourceRoot = new SourceRoot(Paths.get(filteredDirectory.getAbsolutePath()), parserConfiguration);
             List<ParseResult<CompilationUnit>> parseResults = sourceRoot.tryToParseParallelized();
-
             for (ParseResult<CompilationUnit> parseResult : parseResults) {
                 if (!parseResult.isSuccessful()) {
                     continue;
@@ -173,10 +174,20 @@ public class SwaggerDocs {
                     log.error(e.getMessage(), e);
                 }
             }
+
             for (Map.Entry<String, Model> entry : javaxRsVisitorAdapter.getModelMap().entrySet()) {
                 swagger.model(entry.getKey(), entry.getValue());
             }
-            for (Map.Entry<String, Model> entry : restVisitorAdapter.getModelMap().entrySet()) {
+            Map<String, Model> modelMap = restVisitorAdapter.getModelMap();
+            restVisitorAdapter.dependencyVisit((name, dependency) -> {
+                Model dependModel = modelMap.get(dependency);
+                Model cur = modelMap.get(name);
+                if(dependModel == null || cur == null || dependModel.getProperties() == null || cur.getProperties() == null) return;
+
+                log.info("属性合并：" + name + " ====> " + dependency);
+                cur.getProperties().putAll(dependModel.getProperties());
+            });
+            for (Map.Entry<String, Model> entry : modelMap.entrySet()) {
                 swagger.model(entry.getKey(), entry.getValue());
             }
 
@@ -186,6 +197,7 @@ public class SwaggerDocs {
                 swagger.getInfo().title(title);
                 swagger.host(host);
                 swagger.basePath(basePath);
+                System.out.println(projectName);
                 swaggerMap.put(projectName, swagger);
                 for (Path path : swagger.getPaths().values()) {
                     for (Operation operation : path.getOperations()) {
@@ -291,7 +303,6 @@ public class SwaggerDocs {
     }
 
     public static ClassLoader CLASSLOADER = SwaggerDocs.class.getClassLoader();
-
 }
 
 
