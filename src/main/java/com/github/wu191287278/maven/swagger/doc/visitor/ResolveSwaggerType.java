@@ -35,6 +35,7 @@ import com.github.javaparser.symbolsolver.model.typesystem.ReferenceTypeImpl;
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionFieldDeclaration;
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionInterfaceDeclaration;
 import com.github.javaparser.utils.Pair;
+import com.github.wu191287278.maven.swagger.doc.dependency.DependencyGraph;
 import io.swagger.models.ArrayModel;
 import io.swagger.models.Model;
 import io.swagger.models.ModelImpl;
@@ -56,6 +57,7 @@ public class ResolveSwaggerType {
     private final Map<String, Property> propertyMap = new ConcurrentHashMap<>();
 
     private final Map<String, Property> referencePropertyMap = new HashMap<>();
+    public final DependencyGraph dependencyGraph = new DependencyGraph();
 
     public static String TIME_FORMAT = "13:11:43";
 
@@ -133,6 +135,7 @@ public class ResolveSwaggerType {
                             }
                         }
                     } catch (Exception e) {
+                        dependencyGraph.addDependency(resolvedReferenceType.getTypeDeclaration().getName(), ancestor.getTypeDeclaration().getName());
                         log.error(e.getMessage());
                     }
                 }
