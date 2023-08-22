@@ -3,6 +3,7 @@ package com.github.wu191287278.maven.swagger.doc.visitor;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -665,5 +666,9 @@ public class RestVisitorAdapter extends VoidVisitorAdapter<Swagger> {
     public RestVisitorAdapter setBasePackage(String basePackage) {
         this.basePackage = basePackage;
         return this;
+    }
+
+    public void dependencyVisit(BiConsumer<String, String> consumer){
+        resolveSwaggerType.dependencyGraph.visit(consumer);
     }
 }
