@@ -769,6 +769,7 @@ public class ResolveSwaggerType {
         }
 
         if ("com.alibaba.fastjson.JSONObject".equals(clazzName)
+                ||"com.alibaba.fastjson2.JSONObject".equals(clazzName)
                 || "com.google.gson.JsonObject".equals(clazzName)
                 || "com.fasterxml.jackson.databind.node.ObjectNode".equals(clazzName)
         ) {
@@ -777,6 +778,7 @@ public class ResolveSwaggerType {
         }
 
         if ("com.alibaba.fastjson.JSONArray".equals(clazzName)
+                ||"com.alibaba.fastjson2.JSONArray".equals(clazzName)
                 || "com.google.gson.JsonArray".equals(clazzName)
                 || "com.fasterxml.jackson.databind.node.ArrayNode".equals(clazzName)
         ) {

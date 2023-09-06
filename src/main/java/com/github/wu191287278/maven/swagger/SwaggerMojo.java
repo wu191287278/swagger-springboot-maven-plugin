@@ -71,7 +71,7 @@ public class SwaggerMojo extends AbstractMojo {
     @Parameter(name = "recursionAncestor", defaultValue = "false")
     public Boolean recursionAncestor;
 
-    @Parameter(name = "outputDirectory", defaultValue = "${project.build.outputDirectory}/static")
+    @Parameter(name = "outputDirectory", defaultValue = "${project.build.outputDirectory}/static/swagger")
     private File outputDirectory;
 
     @Parameter(name = "includeArtifactIds", defaultValue = "")
