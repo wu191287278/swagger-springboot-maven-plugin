@@ -1,12 +1,5 @@
 package com.github.wu191287278.maven.swagger.doc.visitor;
 
-import java.beans.Transient;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.math.BigDecimal;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.javaparser.ast.NodeList;
@@ -39,20 +32,22 @@ import com.github.javaparser.utils.Pair;
 import com.github.wu191287278.maven.swagger.doc.dependency.DependencyGraph;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.GeneratedMessageV3;
-import com.sun.org.apache.xerces.internal.impl.XMLScanner;
 import io.swagger.models.ArrayModel;
 import io.swagger.models.Model;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.RefModel;
 import io.swagger.models.properties.*;
 import javassist.CtField;
-
-import javax.validation.constraints.*;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.validation.constraints.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author yu.wu
