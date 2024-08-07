@@ -2,6 +2,7 @@ package com.github.wu191287278.maven.swagger.doc.visitor;
 
 import java.beans.Transient;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,13 +37,19 @@ import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionFieldDeclara
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionInterfaceDeclaration;
 import com.github.javaparser.utils.Pair;
 import com.github.wu191287278.maven.swagger.doc.dependency.DependencyGraph;
+import com.google.protobuf.AbstractMessage;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.GeneratedMessageV3;
+import com.sun.org.apache.xerces.internal.impl.XMLScanner;
 import io.swagger.models.ArrayModel;
 import io.swagger.models.Model;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.RefModel;
 import io.swagger.models.properties.*;
 import javassist.CtField;
+
 import javax.validation.constraints.*;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +88,7 @@ public class ResolveSwaggerType {
         if ("java.lang.Object".equals(clazzName)) {
             return new ObjectProperty();
         }
+
         if (resolvedType instanceof ReferenceTypeImpl) {
             clazzName = ((ReferenceTypeImpl) resolvedType).getId();
         }
@@ -166,6 +174,17 @@ public class ResolveSwaggerType {
             for (ResolvedFieldDeclaration declaredField : declaredFields) {
                 ResolvedType resolvedType = declaredField.getType();
                 String name = declaredField.getName();
+
+                if (name.toLowerCase().equalsIgnoreCase("unknownFields") ||
+                        name.toLowerCase().equalsIgnoreCase("memoizedSize") ||
+                        name.toLowerCase().equalsIgnoreCase("memoizedHashCode") ||
+                        name.toLowerCase().equalsIgnoreCase("memoizedIsInitialized") ||
+                        name.toLowerCase().equalsIgnoreCase("bitField0_")) {
+                    continue;
+                }
+                if (name.endsWith("_")) {
+                    name = name.substring(0, name.length() - 1);
+                }
                 if (!declaredField.isStatic() && declaredField instanceof JavaParserFieldDeclaration) {
                     JavaParserFieldDeclaration field = (JavaParserFieldDeclaration) declaredField;
                     FieldDeclaration wrappedNode = field.getWrappedNode();
@@ -769,7 +788,7 @@ public class ResolveSwaggerType {
         }
 
         if ("com.alibaba.fastjson.JSONObject".equals(clazzName)
-                ||"com.alibaba.fastjson2.JSONObject".equals(clazzName)
+                || "com.alibaba.fastjson2.JSONObject".equals(clazzName)
                 || "com.google.gson.JsonObject".equals(clazzName)
                 || "com.fasterxml.jackson.databind.node.ObjectNode".equals(clazzName)
         ) {
@@ -778,7 +797,7 @@ public class ResolveSwaggerType {
         }
 
         if ("com.alibaba.fastjson.JSONArray".equals(clazzName)
-                ||"com.alibaba.fastjson2.JSONArray".equals(clazzName)
+                || "com.alibaba.fastjson2.JSONArray".equals(clazzName)
                 || "com.google.gson.JsonArray".equals(clazzName)
                 || "com.fasterxml.jackson.databind.node.ArrayNode".equals(clazzName)
         ) {
@@ -786,6 +805,87 @@ public class ResolveSwaggerType {
         }
 
         return null;
+    }
+
+    public static Class<?> isGrpcType(String clazzName) {
+        try {
+            Class<?> aClass = Class.forName(clazzName);
+            if (AbstractMessage.class.isAssignableFrom(aClass)) {
+                return aClass;
+            }
+        } catch (Exception ignore) {
+        }
+        return null;
+    }
+
+    public static ObjectProperty resolveGrpcType(Class<?> generatedMessageV3) {
+        try {
+            String simpleName = generatedMessageV3.getSimpleName();
+            Method getDescriptor = generatedMessageV3.getMethod("getDescriptor");
+            Descriptors.Descriptor invoke = (Descriptors.Descriptor) getDescriptor.invoke(null);
+            List<Descriptors.FieldDescriptor> allFields = invoke.getFields();
+            ObjectProperty refModel = new ObjectProperty();
+            refModel.setName(simpleName);
+            refModel.setType(simpleName);
+            for (Descriptors.FieldDescriptor fieldDescriptor : allFields) {
+                Property property = resolveGrpcType(fieldDescriptor);
+                if (property == null) {
+                    continue;
+                }
+                refModel.property(fieldDescriptor.getName(), property);
+            }
+            return refModel;
+        } catch (Exception ignore) {
+        }
+        return new ObjectProperty();
+    }
+
+    public static Property resolveGrpcType(Descriptors.FieldDescriptor field) {
+        Descriptors.FieldDescriptor.Type type = field.getType();
+        String fieldType = type.name();
+        String name = field.getJsonName();
+        if (name.endsWith("_")) {
+            name = name.substring(0, name.length() - 2);
+        }
+
+        if (name.toLowerCase().equalsIgnoreCase("unknownFields") ||
+                name.toLowerCase().equalsIgnoreCase("memoizedSize") ||
+                name.toLowerCase().equalsIgnoreCase("memoizedHashCode") ||
+                name.toLowerCase().equalsIgnoreCase("memoizedIsInitialized") ||
+                name.toLowerCase().equalsIgnoreCase("bitField0_")) {
+            return null;
+        }
+
+        if (fieldType.toLowerCase().startsWith("int")) {
+            IntegerProperty integerProperty = new IntegerProperty();
+            integerProperty.setName(name);
+            integerProperty.setType(fieldType);
+            return integerProperty;
+        }
+
+        if (fieldType.equalsIgnoreCase("Message")) {
+            ObjectProperty objectProperty = new ObjectProperty();
+            for (Descriptors.FieldDescriptor fieldDescriptor : field.getMessageType().getFields()) {
+                Property subNameType = resolveGrpcType(fieldDescriptor);
+                if (subNameType == null) {
+                    continue;
+                }
+                objectProperty.setName(name);
+                objectProperty.setType(fieldDescriptor.getMessageType().getName());
+                objectProperty.property(subNameType.getName(), subNameType);
+
+            }
+            if (field.isRepeated()) {
+                return new ArrayProperty()
+                        .items(objectProperty);
+            }
+            return objectProperty;
+
+        }
+        StringProperty property = new StringProperty();
+        property.setName(name);
+        property.setType(fieldType);
+        return property;
     }
 
 }
